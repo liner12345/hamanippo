@@ -179,6 +179,7 @@ function renderToday() {
   var r = report(S.date);
   $('#stop-count').textContent = r.stops.length + '件';
   $('#route-empty').hidden = r.stops.length > 0;
+  $('#btn-clear-today').hidden = r.stops.length === 0;
 
   $('#route').innerHTML = r.stops.map(function (st, i) {
     var dd = destOf(st.destId), tags = [];
@@ -717,6 +718,15 @@ $('#btn-add').addEventListener('click', function () {
 $('#btn-output').addEventListener('click', openOutput);
 $('#btn-settings').addEventListener('click', function () { loadSettingsForm(); openSheet('sh-set'); });
 $('#btn-cat-manage').addEventListener('click', function () { renderCats(); openSheet('sh-cat'); });
+$('#btn-clear-today').addEventListener('click', function () {
+  var r = report(S.date);
+  if (!r.stops.length) return;
+  if (!confirm(fmtDate(S.date, 'md') + ' の記録（' + r.stops.length + '件）をすべて消去しますか？')) return;
+  undoSnapshot = { date: S.date, stops: r.stops.slice() };
+  r.stops = [];
+  save(); renderToday();
+  toast('すべての記録をクリアしました', '取り消す', undoApply);
+});
 
 /* ピッカー */
 $('#pick-search').addEventListener('input', renderPickList);
