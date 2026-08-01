@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>配送日報</title>
+<meta name="description" content="配送先を記録して日報テキストを作るツール">
+<meta name="theme-color" content="#131820">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="日報">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<header class="app-head">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">配送日報</span>
+  </div>
+  <button class="icon-btn" id="btn-settings" aria-label="設定を開く">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 13a7.8 7.8 0 0 0 0-2l2-1.5-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L14.9 3h-3.9l-.4 2.6c-.6.2-1.2.6-1.7 1l-2.4-1-2 3.4L6.6 11a7.8 7.8 0 0 0 0 2l-2 1.5 2 3.4 2.4-1c.5.4 1.1.8 1.7 1l.4 2.6h3.9l.4-2.6c.6-.2 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.5Z"/></svg>
+  </button>
+</header>
+
+<main id="main">
+
+  <!-- ══ 日報タブ ══ -->
+  <section class="tab" id="tab-today">
+    <div class="datebar">
+      <button class="icon-btn sm" id="d-prev" aria-label="前の日">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+      </button>
+      <label class="datefield">
+        <span class="date-main" id="d-main">----.--.--</span>
+        <span class="date-wd" id="d-wd">-</span>
+        <input type="date" id="d-input" aria-label="日付を選ぶ">
+      </label>
+      <button class="icon-btn sm" id="d-next" aria-label="次の日">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </button>
+      <button class="chip" id="d-today">今日</button>
+    </div>
+
+    <div class="courserow" id="courserow"></div>
+
+    <div class="route-head">
+      <span class="eyebrow">ROUTE</span>
+      <span class="count" id="stop-count">0件</span>
+    </div>
+
+    <ol class="route" id="route"></ol>
+
+    <div class="empty" id="route-empty" hidden>
+      <p class="empty-title">この日はまだ記録がありません</p>
+      <p class="empty-sub">下の「配送先を追加」から回った順に足していきます。</p>
+    </div>
+  </section>
+
+  <!-- ══ 配送先タブ ══ -->
+  <section class="tab" id="tab-dest" hidden>
+    <div class="pane-head">
+      <span class="eyebrow">MASTER</span>
+      <button class="chip" id="btn-cat-manage">カテゴリを編集</button>
+    </div>
+    <div id="dest-list"></div>
+    <details class="archive" id="archive-box" hidden>
+      <summary>削除した配送先</summary>
+      <div id="archive-list"></div>
+    </details>
+  </section>
+
+  <!-- ══ 履歴タブ ══ -->
+  <section class="tab" id="tab-hist" hidden>
+    <div class="pane-head"><span class="eyebrow">LOG</span></div>
+    <div id="hist-list"></div>
+  </section>
+
+</main>
+
+<!-- 固定アクション -->
+<div class="actionbar" id="actionbar">
+  <button class="btn btn-primary" id="btn-add">
+    <span class="plus" aria-hidden="true">＋</span> 配送先を追加
+  </button>
+  <button class="btn btn-ghost" id="btn-output">出力</button>
+</div>
+
+<nav class="tabbar" role="tablist">
+  <button class="tabbtn is-on" data-tab="today" role="tab" aria-selected="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+    <span>日報</span>
+  </button>
+  <button class="tabbtn" data-tab="dest" role="tab" aria-selected="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+    <span>配送先</span>
+  </button>
+  <button class="tabbtn" data-tab="hist" role="tab" aria-selected="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>
+    <span>履歴</span>
+  </button>
+</nav>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<!-- ══ シート：配送先を選ぶ ══ -->
+<section class="sheet" id="sh-pick" hidden aria-labelledby="sh-pick-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-pick-t">配送先を選ぶ</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-fixed">
+    <p class="transfer-hint" id="pick-hint" hidden></p>
+    <input type="search" class="search" id="pick-search" placeholder="名前で絞り込む" autocomplete="off">
+    <div class="chiprow" id="pick-cats"></div>
+  </div>
+  <div class="sheet-body" id="pick-list"></div>
+  <div class="sheet-foot">
+    <button class="btn btn-primary" id="pick-new"><span class="plus" aria-hidden="true">＋</span> 新しい配送先を登録</button>
+  </div>
+</section>
+
+<!-- ══ シート：配送先の登録・編集 ══ -->
+<section class="sheet" id="sh-dest" hidden aria-labelledby="sh-dest-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-dest-t">配送先を登録</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body">
+    <label class="field">
+      <span class="field-label">配送先名</span>
+      <input type="text" id="dest-name" placeholder="例：〇〇商事 豊田倉庫" autocomplete="off">
+    </label>
+    <label class="field">
+      <span class="field-label">カテゴリ</span>
+      <select id="dest-cat"></select>
+    </label>
+    <label class="field">
+      <span class="field-label">メモ<span class="opt">任意</span></span>
+      <input type="text" id="dest-memo" placeholder="例：裏口 / 14時以降" autocomplete="off">
+    </label>
+  </div>
+  <div class="sheet-foot col">
+    <button class="btn btn-primary" id="dest-save">保存する</button>
+    <button class="btn btn-danger" id="dest-del" hidden>この配送先を削除</button>
+  </div>
+</section>
+
+<!-- ══ シート：行のメニュー ══ -->
+<section class="sheet" id="sh-stop" hidden aria-labelledby="sh-stop-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-stop-t">行の操作</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body">
+    <p class="stop-target" id="stop-target"></p>
+    <label class="field">
+      <span class="field-label">この行のメモ<span class="opt">任意</span></span>
+      <input type="text" id="stop-note" placeholder="例：積み残しあり" autocomplete="off">
+    </label>
+    <div class="menu">
+      <button class="menu-item accent" id="stop-transfer">
+        <strong>ここで転送を頼まれた</strong>
+        <small>引き取った品物の届け先を選びます</small>
+      </button>
+      <button class="menu-item" id="stop-up">上へ移動</button>
+      <button class="menu-item" id="stop-down">下へ移動</button>
+      <button class="menu-item danger" id="stop-del">この行を削除</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ シート：出力 ══ -->
+<section class="sheet tall" id="sh-out" hidden aria-labelledby="sh-out-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-out-t">日報テキスト</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body">
+    <pre class="out" id="out-text"></pre>
+  </div>
+  <div class="sheet-foot col">
+    <button class="btn btn-primary" id="out-share">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="m8 7.5 4-3.5 4 3.5"/><path d="M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg>
+      共有する
+    </button>
+    <button class="btn btn-line" id="out-line">LINEで直接送る</button>
+    <button class="btn btn-ghost" id="out-copy">テキストをコピー</button>
+  </div>
+</section>
+
+<!-- ══ シート：カテゴリ管理 ══ -->
+<section class="sheet" id="sh-cat" hidden aria-labelledby="sh-cat-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-cat-t">カテゴリ</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body">
+    <div id="cat-list"></div>
+  </div>
+  <div class="sheet-foot">
+    <div class="inline-add">
+      <input type="text" id="cat-new" placeholder="新しいカテゴリ名" autocomplete="off">
+      <button class="btn btn-primary sm" id="cat-add">追加</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══ シート：設定 ══ -->
+<section class="sheet tall" id="sh-set" hidden aria-labelledby="sh-set-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-set-t">設定</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body">
+    <label class="field">
+      <span class="field-label">1行目に入れる文字<span class="opt">任意</span></span>
+      <input type="text" id="set-header" placeholder="例：【日報】">
+    </label>
+    <label class="field">
+      <span class="field-label">日付の書き方</span>
+      <select id="set-datestyle">
+        <option value="slash">2026/8/1(土)</option>
+        <option value="slash0">2026/08/01(土)</option>
+        <option value="dot">2026.08.01(土)</option>
+        <option value="jp">2026年8月1日(土)</option>
+        <option value="md">8/1(土)</option>
+      </select>
+    </label>
+    <label class="field">
+      <span class="field-label">転送の書き方</span>
+      <select id="set-transfer">
+        <option value="src">△△工業（□□運輸）</option>
+        <option value="srcArrow">△△工業（→□□運輸）</option>
+        <option value="dest">□□運輸 ※△△工業より転送</option>
+        <option value="none">注記なし</option>
+      </select>
+    </label>
+    <label class="switch">
+      <input type="checkbox" id="set-number">
+      <span><strong>行に番号を振る</strong><small>1. 〇〇商事 の形式になります</small></span>
+    </label>
+    <label class="field">
+      <span class="field-label">最終行に入れる文字<span class="opt">任意</span></span>
+      <input type="text" id="set-footer" placeholder="例：以上、よろしくお願いします">
+    </label>
+
+    <hr class="rule">
+    <p class="note" id="storage-note"></p>
+    <div class="menu">
+      <button class="menu-item" id="set-export"><strong>バックアップを書き出す</strong><small>登録内容と履歴をJSONで保存します</small></button>
+      <button class="menu-item" id="set-import"><strong>バックアップを読み込む</strong><small>いまのデータは置き換わります</small></button>
+      <button class="menu-item danger" id="set-clear">すべてのデータを消す</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+  </div>
+</section>
+
+<!-- ══ シート：コース一覧 ══ -->
+<section class="sheet" id="sh-clist" hidden aria-labelledby="sh-clist-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-clist-t">コース</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body"><div id="clist"></div></div>
+  <div class="sheet-foot">
+    <button class="btn btn-primary" id="c-new"><span class="plus" aria-hidden="true">＋</span> 新しいコースを作る</button>
+  </div>
+</section>
+
+<!-- ══ シート：コース編集 ══ -->
+<section class="sheet tall" id="sh-cedit" hidden aria-labelledby="sh-cedit-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-cedit-t">コースを作る</h2>
+    <button class="txt-btn" id="cedit-back">戻る</button>
+  </header>
+  <div class="sheet-body">
+    <label class="field">
+      <span class="field-label">コース名</span>
+      <input type="text" id="c-name" placeholder="例：定期配送" autocomplete="off">
+    </label>
+    <div class="field-label">回る順番<span class="opt" id="c-count">0件</span></div>
+    <div id="c-items"></div>
+    <button class="btn btn-ghost btn-block" id="c-add"><span class="plus" aria-hidden="true">＋</span> 配送先を追加</button>
+  </div>
+  <div class="sheet-foot col">
+    <button class="btn btn-primary" id="c-save">保存する</button>
+    <button class="btn btn-danger" id="c-del" hidden>このコースを削除</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" hidden><span id="toast-msg"></span><button id="toast-act" hidden>取り消す</button></div>
+
+<script src="./app.js"></script>
+</body>
+</html>
