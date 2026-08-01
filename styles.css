@@ -7,6 +7,8 @@
   --surface:#ffffff;
   --surface-2:#f4f7f9;
   --ink:#131820;
+  --head-bg:#131820;     /* ヘッダー背景：ダークモードでも暗色を維持 */
+  --head-ink:#ffffff;    /* ヘッダー文字：ダークモードでも白を維持 */
   --muted:#5a6674;
   --rule:#ccd5dd;
   --hi:#ffb300;          /* 高視認アンバー：主要動作 */
@@ -27,6 +29,8 @@
     --surface:#191f27;
     --surface-2:#212932;
     --ink:#eef2f6;
+    --head-bg:#131820;    /* ダークモードでもヘッダーは暗いまま */
+    --head-ink:#ffffff;
     --muted:#93a1b0;
     --rule:#2b333d;
     --transfer:#4bb8d8;
@@ -59,7 +63,7 @@ button{cursor:pointer;border:0;background:none;padding:0}
   position:sticky;top:0;z-index:20;
   display:flex;align-items:center;justify-content:space-between;
   gap:12px;padding:10px 14px;
-  background:var(--ink);color:#fff;
+  background:var(--head-bg);color:var(--head-ink);
   padding-top:calc(10px + env(safe-area-inset-top,0px));
 }
 .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.04em}
