@@ -619,8 +619,19 @@ function copyText(t) {
    11. イベント配線
    ══════════════════════════════════════ */
 document.addEventListener('click', function (ev) {
-  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm]') : null;
+  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear]') : null;
   if (!t) return;
+
+  if (t.dataset.clear === 'today') {
+    var r = report(S.date);
+    if (!r.stops.length) return;
+    if (!confirm(fmtDate(S.date, 'md') + ' の記録（' + r.stops.length + '件）をすべて消去しますか？')) return;
+    undoSnapshot = { date: S.date, stops: r.stops.slice() };
+    r.stops = [];
+    save(); renderToday();
+    toast('すべての記録をクリアしました', '取り消す', undoApply);
+    return;
+  }
 
   if (t.hasAttribute('data-close')) { closeSheet(); return; }
   if (t.dataset.tab) { setTab(t.dataset.tab); return; }
@@ -718,15 +729,6 @@ $('#btn-add').addEventListener('click', function () {
 $('#btn-output').addEventListener('click', openOutput);
 $('#btn-settings').addEventListener('click', function () { loadSettingsForm(); openSheet('sh-set'); });
 $('#btn-cat-manage').addEventListener('click', function () { renderCats(); openSheet('sh-cat'); });
-$('#btn-clear-today').addEventListener('click', function () {
-  var r = report(S.date);
-  if (!r.stops.length) return;
-  if (!confirm(fmtDate(S.date, 'md') + ' の記録（' + r.stops.length + '件）をすべて消去しますか？')) return;
-  undoSnapshot = { date: S.date, stops: r.stops.slice() };
-  r.stops = [];
-  save(); renderToday();
-  toast('すべての記録をクリアしました', '取り消す', undoApply);
-});
 
 /* ピッカー */
 $('#pick-search').addEventListener('input', renderPickList);
