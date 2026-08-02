@@ -46,8 +46,6 @@
     </div>
 
     <div class="pagerow" id="pagerow"></div>
-    <p class="page-hint" id="page-hint" hidden>午前と午後で分けたいときは「＋ ページ」を押します。ページごとに別々の日報として出力されます。</p>
-
     <div class="courserow" id="courserow"></div>
 
     <div class="route-head">
@@ -232,6 +230,17 @@
       <span class="field-label">日付より前に入れる文字<span class="opt">改行可</span></span>
       <textarea id="set-header" rows="2" placeholder="例：【日報】&#10;浜松営業所 山田"></textarea>
     </label>
+    <details class="tags">
+      <summary>差し込みタグを使う</summary>
+      <p>上下の入力欄に次の文字を書くと、出力時にその日の内容へ置き換わります。</p>
+      <dl>
+        <dt>{カテゴリ}</dt><dd>そのページに出てくる配送先のカテゴリ。複数あれば「・」でつなげます</dd>
+        <dt>{ページ}</dt><dd>ページ名（名前が無ければ「ページ1」など）</dd>
+        <dt>{日付}</dt><dd>設定した書式の日付</dd>
+        <dt>{件数}</dt><dd>そのページの配送先の数</dd>
+      </dl>
+      <p class="tags-note">タグだけを書いた行は、中身が空のときは行ごと出力されません。</p>
+    </details>
     <label class="field">
       <span class="field-label">日付の書き方</span>
       <select id="set-datestyle">

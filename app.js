@@ -211,14 +211,52 @@ function lineFor(st, i, stops) {
   return line;
 }
 
+// ヘッダー/フッターの差し込みタグを展開する。
+// 「元は文字があったのに、展開したら空になった行」だけを落とす。
+function fillTags(text, ctx) {
+  if (!text) return '';
+  var map = {
+    'カテゴリ': ctx.cats,
+    'ページ': ctx.page,
+    '日付': ctx.date,
+    '件数': ctx.count
+  };
+  return text.split('\n').map(function (line) {
+    if (!line.trim()) return line;            // もともと空行はそのまま残す
+    var had = /\{[^}]*\}/.test(line);
+    var outLine = line.replace(/\{([^}]*)\}/g, function (m, key) {
+      var v = map[key.trim()];
+      return v == null ? m : v;
+    });
+    if (had && !outLine.trim()) return null;  // タグが空になって消えた行は落とす
+    return outLine.replace(/[ \u3000]+$/, '');
+  }).filter(function (x) { return x !== null; }).join('\n');
+}
+
+function pageCategories(stops) {
+  var names = [];
+  stops.forEach(function (st) {
+    var d = destOf(st.destId); if (!d) return;
+    var n = catName(d.catId);
+    if (names.indexOf(n) < 0) names.push(n);
+  });
+  return names;
+}
+
 function buildText(k, idx) {
   var s = DB.settings, ps = pagesOf(k);
   var i = (idx == null) ? pageIdx(k) : idx;
   var g = ps[i]; if (!g) return '';
   var out = [];
 
-  var head = String(s.header || '').replace(/[\s\uFEFF]+$/, '');
-  var foot = String(s.footer || '').replace(/^\n+|[\s\uFEFF]+$/g, '');
+  var ctx = {
+    cats: pageCategories(g.stops).join('・'),
+    page: pageLabel(g, i),
+    date: fmtDate(k, s.dateStyle),
+    count: String(g.stops.length)
+  };
+  var head = fillTags(String(s.header || ''), ctx).replace(/[\s\uFEFF]+$/, '');
+  var foot = fillTags(String(s.footer || ''), ctx).replace(/^\n+|[\s\uFEFF]+$/g, '');
   var name = (s.pageName === 'none') ? '' : String(g.name || '').trim();
 
   if (head) out.push(head);
@@ -278,17 +316,16 @@ function renderToday() {
 function renderPageBar() {
   var ps = pagesOf(S.date), cur = pageIdx(S.date);
   var html = ps.map(function (g, i) {
-    var on = i === cur;
-    return '<button class="chip page-chip' + (on ? ' is-on' : '') + '" data-page="' + i + '"' +
-      (on ? ' aria-current="page"' : '') + '>' +
-      esc(pageLabel(g, i)) +
-      '<span class="chip-n">' + g.stops.length + '</span>' +
-      (on ? '<span class="page-more" aria-hidden="true">⋮</span>' : '') +
-      '</button>';
+    var on = i === cur, label = pageLabel(g, i);
+    return '<span class="page-pill' + (on ? ' is-on' : '') + '">' +
+      '<button class="page-tab" data-page="' + i + '"' + (on ? ' aria-current="page"' : '') + '>' +
+        esc(label) + '<span class="chip-n">' + g.stops.length + '</span>' +
+      '</button>' +
+      (on ? '<button class="page-more" data-pagemenu="1" aria-label="' + esc(label) + 'の名前変更・削除">' + DOTS + '</button>' : '') +
+      '</span>';
   }).join('');
   html += '<button class="chip chip-ghost" data-pagenew="1" aria-label="ページを追加">＋ ページ</button>';
   $('#pagerow').innerHTML = html;
-  $('#page-hint').hidden = ps.length > 1;
 }
 
 function renderCourseRow() {
@@ -747,7 +784,7 @@ function copyText(t) {
    11. イベント配線
    ══════════════════════════════════════ */
 document.addEventListener('click', function (ev) {
-  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear],[data-page],[data-pagenew],[data-hpage]') : null;
+  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear],[data-page],[data-pagenew],[data-pagemenu],[data-hpage]') : null;
   if (!t) return;
 
   if (t.dataset.clear === 'today') {
@@ -785,6 +822,7 @@ document.addEventListener('click', function (ev) {
   if (t.dataset.picktf) { addStop(t.dataset.picktf, true); return; }
 
   if (t.dataset.pagenew) { addPage(); return; }
+  if (t.dataset.pagemenu) { openPageSheet(); return; }
   if (t.dataset.page != null) {
     var pi = +t.dataset.page;
     if (pi === pageIdx(S.date)) { openPageSheet(); return; }
