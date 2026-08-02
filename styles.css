@@ -118,7 +118,7 @@ body.no-actions main{padding-bottom:calc(80px + var(--safe))}
 /* ── コース呼び出し ─────────────────── */
 .courserow{
   display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-  padding:10px 14px 2px;
+  padding:14px 14px 2px;
 }
 .courserow::-webkit-scrollbar{display:none}
 .courserow .chip{min-height:42px;font-size:14px;flex:none}
@@ -212,28 +212,55 @@ body.no-actions main{padding-bottom:calc(80px + var(--safe))}
   pointer-events:none;
 }
 
-/* ── ページ切替 ─────────────────────── */
+/* ── ページ切替（日付バーの続きとして白い面に置く） ── */
 .pagerow{
-  display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-  padding:10px 14px 0;
+  display:flex;gap:8px;align-items:flex-end;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:0 14px;
+  background:var(--surface);
+  border-bottom:1px solid var(--rule);
 }
 .pagerow::-webkit-scrollbar{display:none}
-.pagerow .chip{min-height:40px;font-size:14px;flex:none;display:inline-flex;align-items:center;gap:7px}
-.page-chip{background:var(--surface);color:var(--muted);border-color:var(--rule)}
-.page-chip .chip-n{background:var(--rule);color:var(--muted)}
-.page-chip.is-on{
-  background:var(--surface);color:var(--ink);
-  border-color:var(--transfer);box-shadow:inset 0 -3px 0 var(--transfer);
-  font-weight:700;
+
+.page-pill{
+  display:inline-flex;align-items:stretch;flex:none;
+  margin-bottom:-1px;
+  border:1.5px solid var(--rule);border-bottom:0;
+  border-radius:10px 10px 0 0;
+  background:var(--surface-2);
+  overflow:hidden;
 }
-.page-chip.is-on .chip-n{background:var(--transfer);color:#fff}
-.page-more{font-size:15px;line-height:1;opacity:.55;margin-left:-2px}
-.page-hint{
-  margin:8px 14px 0;padding:9px 12px;border-radius:10px;
-  font-size:12.5px;line-height:1.6;color:var(--muted);
-  background:var(--surface);border:1px dashed var(--rule);
+.page-tab{
+  display:inline-flex;align-items:center;gap:7px;
+  min-height:46px;padding:0 14px;
+  font-size:14px;font-weight:600;color:var(--muted);white-space:nowrap;
 }
-.page-hint[hidden]{display:none}
+.page-pill .chip-n{
+  font-family:var(--mono);font-size:11px;font-weight:700;line-height:1;
+  background:var(--rule);color:var(--muted);
+  border-radius:999px;padding:3px 7px;
+}
+.page-pill.is-on{
+  background:var(--surface);
+  border-color:var(--transfer);
+  box-shadow:inset 0 3px 0 var(--transfer);
+}
+.page-pill.is-on .page-tab{color:var(--ink);font-weight:700}
+/* --transfer はダークモードで明色に反転するため、文字は --surface を使う
+   （明るい面には暗い文字、暗い面には明るい文字が自動で当たる） */
+.page-pill.is-on .chip-n{background:var(--transfer);color:var(--surface)}
+.page-more{
+  width:42px;min-height:46px;display:grid;place-items:center;
+  border-left:1px solid var(--rule);color:var(--muted);
+}
+.page-more:active{background:var(--surface-2)}
+.page-more svg{width:20px;height:20px}
+.pagerow .chip-ghost{
+  align-self:center;flex:none;min-height:38px;font-size:13px;
+  margin:6px 0;
+}
+
+/* ── コース（灰色の面に置いて、ページと明確に分ける） ── */
 .hist-page{
   display:inline-block;margin-left:8px;padding:2px 7px;border-radius:5px;
   font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:0;
@@ -344,6 +371,12 @@ body.no-actions main{padding-bottom:calc(80px + var(--safe))}
   display:grid;grid-template-columns:repeat(3,1fr);
   background:var(--surface);border-top:1px solid var(--rule);
   padding-bottom:var(--safe);
+}
+/* iOS Safari はスクロールできないページで固定要素をツールバー分だけ上に置く。
+   下へ伸ばして隙間を塞ぐ。隙間が無い端末では画面外に出るだけで害はない。 */
+.tabbar::after{
+  content:'';position:absolute;top:100%;left:0;right:0;height:80px;
+  background:var(--surface);
 }
 .tabbtn{
   min-height:64px;display:grid;place-items:center;gap:3px;
@@ -520,6 +553,26 @@ body.no-actions main{padding-bottom:calc(80px + var(--safe))}
 .citem button.del{color:var(--danger)}
 .citem svg{width:19px;height:19px;stroke-width:2}
 .pick-item.solo{grid-template-columns:1fr}
+
+/* ── 差し込みタグの説明 ─────────────── */
+.tags{
+  margin:-4px 0 16px;padding:0 14px;
+  background:var(--surface);border:1.5px solid var(--rule);border-radius:var(--r);
+  font-size:13px;color:var(--muted);
+}
+.tags summary{
+  min-height:46px;display:flex;align-items:center;
+  margin:0 -14px;padding:0 14px;
+  font-weight:700;color:var(--ink);cursor:pointer;
+}
+.tags p{margin:0 0 10px;line-height:1.65}
+.tags dl{margin:0 0 8px;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:baseline}
+.tags dt{
+  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink);
+  background:var(--surface-2);border-radius:5px;padding:3px 6px;white-space:nowrap;
+}
+.tags dd{margin:0;line-height:1.6}
+.tags-note{font-size:12px;padding-bottom:12px}
 
 /* ── 出力プレビュー ─────────────────── */
 .out{
