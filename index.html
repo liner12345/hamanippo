@@ -45,6 +45,9 @@
       <button class="chip" id="d-today">今日</button>
     </div>
 
+    <div class="pagerow" id="pagerow"></div>
+    <p class="page-hint" id="page-hint" hidden>午前と午後で分けたいときは「＋ ページ」を押します。ページごとに別々の日報として出力されます。</p>
+
     <div class="courserow" id="courserow"></div>
 
     <div class="route-head">
@@ -226,8 +229,8 @@
   </header>
   <div class="sheet-body">
     <label class="field">
-      <span class="field-label">1行目に入れる文字<span class="opt">任意</span></span>
-      <input type="text" id="set-header" placeholder="例：【日報】">
+      <span class="field-label">日付より前に入れる文字<span class="opt">改行可</span></span>
+      <textarea id="set-header" rows="2" placeholder="例：【日報】&#10;浜松営業所 山田"></textarea>
     </label>
     <label class="field">
       <span class="field-label">日付の書き方</span>
@@ -248,13 +251,21 @@
         <option value="none">注記なし</option>
       </select>
     </label>
+    <label class="field">
+      <span class="field-label">ページ名の出し方</span>
+      <select id="set-pagename">
+        <option value="inline">2026/8/1(土) 午前</option>
+        <option value="line">日付の次の行に出す</option>
+        <option value="none">出さない</option>
+      </select>
+    </label>
     <label class="switch">
       <input type="checkbox" id="set-number">
       <span><strong>行に番号を振る</strong><small>1. 〇〇商事 の形式になります</small></span>
     </label>
     <label class="field">
-      <span class="field-label">最終行に入れる文字<span class="opt">任意</span></span>
-      <input type="text" id="set-footer" placeholder="例：以上、よろしくお願いします">
+      <span class="field-label">最後に入れる文字<span class="opt">改行可</span></span>
+      <textarea id="set-footer" rows="2" placeholder="例：以上、よろしくお願いします"></textarea>
     </label>
 
     <hr class="rule">
@@ -265,6 +276,29 @@
       <button class="menu-item danger" id="set-clear">すべてのデータを消す</button>
     </div>
     <input type="file" id="import-file" accept="application/json,.json" hidden>
+  </div>
+</section>
+
+<!-- ══ シート：ページの操作 ══ -->
+<section class="sheet" id="sh-page" hidden aria-labelledby="sh-page-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-page-t">ページの操作</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-body">
+    <label class="field">
+      <span class="field-label">ページ名<span class="opt">空欄可</span></span>
+      <input type="text" id="page-name" placeholder="例：午前" autocomplete="off">
+    </label>
+    <div class="menu">
+      <button class="menu-item" id="page-left">前のページと入れ替える</button>
+      <button class="menu-item" id="page-right">次のページと入れ替える</button>
+      <button class="menu-item danger" id="page-del">このページを削除</button>
+    </div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-primary" id="page-save">保存する</button>
   </div>
 </section>
 
