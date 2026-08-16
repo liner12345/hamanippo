@@ -215,7 +215,7 @@ icon.svg / icon-*.png アイコン
 Service Workerがファイルをキャッシュしているので、`sw.js` の先頭にある
 
 ```js
-const CACHE = 'nippou-v16';
+const CACHE = 'nippou-v18';
 ```
 
 の数字を上げてからpushしてください。上げ忘れると古い画面が残ることがあります。

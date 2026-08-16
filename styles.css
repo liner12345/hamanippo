@@ -40,8 +40,15 @@
 
 *,*::before,*::after{box-sizing:border-box}
 
-html,body{margin:0;padding:0}
+html,body{margin:0;padding:0;touch-action:manipulation}
+html{
+  min-height:100%;
+  min-height:100dvh;
+  background:var(--bg);
+}
 body{
+  min-height:100%;
+  min-height:100dvh;
   background:var(--bg);
   color:var(--ink);
   font-family:var(--sans);
@@ -50,6 +57,8 @@ body{
   -webkit-text-size-adjust:100%;
   -webkit-tap-highlight-color:transparent;
   overscroll-behavior-y:none;
+  display:flex;
+  flex-direction:column;
 }
 
 svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;display:block}
@@ -82,11 +91,11 @@ button{cursor:pointer;border:0;background:none;padding:0}
 
 /* ── メイン ─────────────────────────── */
 main{
-  padding:0 0 calc(150px + var(--safe));
-  min-height:60vh;
+  flex:1 0 auto;
+  padding:0 0 calc(140px + var(--safe));
 }
 /* 操作バーが無いタブ（履歴）は、その分だけ下余白を減らす */
-body.no-actions main{padding-bottom:calc(80px + var(--safe))}
+body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .tab[hidden]{display:none}
 
 /* ── 日付バー ───────────────────────── */
