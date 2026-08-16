@@ -458,10 +458,14 @@ body.no-actions main{padding-bottom:calc(80px + var(--safe))}
 }
 .pick-tf svg{width:19px;height:19px;stroke-width:2}
 .pick-tf:active{background:color-mix(in srgb,var(--transfer) 12%,transparent)}
+/* 2行で折り返して残りを省略する。
+   -webkit- 版が実際に効く側で、接頭辞なしの line-clamp は
+   将来の標準化に備えた併記（無いとCSSリンタが警告を出す）。両方残すこと。 */
 .pick-name{
   font-size:16px;font-weight:600;line-height:1.35;
   word-break:break-word;overflow-wrap:anywhere;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  display:-webkit-box;-webkit-box-orient:vertical;
+  -webkit-line-clamp:2;line-clamp:2;
   overflow:hidden;
 }
 .pick-sub{
@@ -605,7 +609,8 @@ body.no-actions main{padding-bottom:calc(80px + var(--safe))}
 .toast #toast-msg{
   flex:1;min-width:0;
   line-height:1.4;word-break:break-word;overflow-wrap:anywhere;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  display:-webkit-box;-webkit-box-orient:vertical;
+  -webkit-line-clamp:2;line-clamp:2;
   overflow:hidden;
 }
 .toast #toast-act{
