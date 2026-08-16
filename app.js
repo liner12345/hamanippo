@@ -1102,6 +1102,11 @@ $('#cat-new').addEventListener('keydown', function (e) { if (e.key === 'Enter') 
    ══════════════════════════════════════ */
 setTab('today');
 
+/* ピンチズームやダブルタップ拡大などのジェスチャを抑止 */
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+document.addEventListener('gesturechange', function (e) { e.preventDefault(); });
+document.addEventListener('gestureend', function (e) { e.preventDefault(); });
+
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./sw.js').catch(function () {});
