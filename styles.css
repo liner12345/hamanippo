@@ -648,12 +648,26 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .toast #toast-act[hidden]{display:none}
 .toast[hidden]{display:none}
 
-/* ── 広い画面 ───────────────────────── */
-@media (min-width:640px){
-  main,.actionbar,.tabbar{max-width:560px;margin-inline:auto}
-  .actionbar,.tabbar{left:50%;right:auto;transform:translateX(-50%);width:100%}
-  .sheet{max-width:560px;left:50%;transform:translateX(-50%);border-radius:18px 18px 0 0}
-  @keyframes rise{from{transform:translateX(-50%) translateY(14px);opacity:.4}to{transform:translateX(-50%);opacity:1}}
+/* ── 広い画面（PC・タブレット・広めのウィンドウ） ───────────────────────── */
+.app-head,.datebar,main,.actionbar,.tabbar,.sheet{
+  max-width:560px;
+  width:100%;
+}
+.app-head,.datebar,main{
+  margin-inline:auto;
+}
+.actionbar,.tabbar{
+  left:50%;right:auto;
+  transform:translateX(-50%);
+}
+.sheet{
+  left:50%;right:auto;
+  transform:translateX(-50%);
+  border-radius:18px 18px 0 0;
+}
+@keyframes rise{
+  from{transform:translateX(-50%) translateY(14px);opacity:.4}
+  to{transform:translateX(-50%) translateY(0);opacity:1}
 }
 
 /* ── モーション低減 ─────────────────────
