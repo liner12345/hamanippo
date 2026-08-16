@@ -1,6 +1,6 @@
 /* 配送日報 — オフライン用 Service Worker
    ファイルを更新したら CACHE の数字を上げてください */
-const CACHE = 'nippou-v15';
+const CACHE = 'nippou-v16';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
