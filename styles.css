@@ -298,7 +298,20 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .cat-block .dest-row:last-child{border-bottom:1px solid var(--rule)}
 .dest-main{padding:10px 2px 10px 18px;text-align:left;min-width:0}
 .dest-name{font-size:16px;font-weight:600;word-break:break-word}
-.dest-memo{font-size:12.5px;color:var(--muted);margin-top:2px}
+.dest-memo{font-size:12.5px;color:var(--muted);margin-top:2px;word-break:break-word}
+.dest-addr{
+  font-size:12px;color:var(--muted);margin-top:3px;
+  display:flex;align-items:center;gap:4px;word-break:break-word;
+}
+.dest-addr svg{width:14px;height:14px;flex:none;opacity:.8}
+.dest-actions{display:flex;align-items:center;gap:6px}
+.dest-map-btn{
+  width:42px;min-height:42px;display:grid;place-items:center;
+  border-radius:50%;color:var(--muted);border:1.5px solid var(--rule);
+  background:var(--surface-2);
+}
+.dest-map-btn:active{background:var(--rule);color:var(--ink)}
+.dest-map-btn svg{width:18px;height:18px}
 .dest-add{
   display:inline-flex;align-items:center;gap:3px;
   min-height:42px;padding:0 14px 0 10px;border-radius:999px;
@@ -480,7 +493,9 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .pick-sub{
   font-size:12px;color:var(--muted);margin-top:2px;
   word-break:break-word;overflow-wrap:anywhere;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  display:-webkit-box;-webkit-box-orient:vertical;
+  -webkit-line-clamp:2;line-clamp:2;
+  overflow:hidden;
 }
 .pick-none{padding:22px 4px;color:var(--muted);font-size:14px;text-align:center}
 

@@ -188,7 +188,7 @@ icon.svg / icon-*.png アイコン
 ```js
 {
   categories:   [{ id, name }],
-  destinations: [{ id, name, catId, memo, uses, archived }],
+  destinations: [{ id, name, catId, address, memo, uses, archived }],
   courses:      [{ id, name, items: [destId, ...] }],
   reports:      { "2026-08-01": { pages: [ { id, name, stops: [...] } ] } },
   // stops[] の各行: { id, destId, from, note, src }
@@ -215,7 +215,7 @@ icon.svg / icon-*.png アイコン
 Service Workerがファイルをキャッシュしているので、`sw.js` の先頭にある
 
 ```js
-const CACHE = 'nippou-v18';
+const CACHE = 'nippou-v19';
 ```
 
 の数字を上げてからpushしてください。上げ忘れると古い画面が残ることがあります。

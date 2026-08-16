@@ -146,6 +146,10 @@
       <select id="dest-cat"></select>
     </label>
     <label class="field">
+      <span class="field-label">住所<span class="opt">任意・地図連携</span></span>
+      <input type="text" id="dest-addr" placeholder="例：浜松市中区砂山町1-1" autocomplete="off">
+    </label>
+    <label class="field">
       <span class="field-label">メモ<span class="opt">任意</span></span>
       <input type="text" id="dest-memo" placeholder="例：裏口 / 14時以降" autocomplete="off">
     </label>
@@ -170,6 +174,10 @@
       <input type="text" id="stop-note" placeholder="例：積み残しあり" autocomplete="off">
     </label>
     <div class="menu">
+      <button class="menu-item" id="stop-map" hidden>
+        <strong>地図アプリで開く</strong>
+        <small id="stop-map-addr"></small>
+      </button>
       <button class="menu-item accent" id="stop-transfer">
         <strong>ここで転送を頼まれた</strong>
         <small>引き取った品物の届け先を選びます</small>
