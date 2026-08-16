@@ -27,7 +27,7 @@ function save() {
 
 function freshDB() {
   return {
-    v: 3,
+    v: 4,
     categories: [{ id: 'c-base', name: '未分類' }],
     destinations: [],
     courses: [],
@@ -50,6 +50,11 @@ function migrate(db) {
   if (!db.reports || typeof db.reports !== 'object') db.reports = {};
   if (!db.settings) db.settings = base.settings;
   for (var k in base.settings) if (!(k in db.settings)) db.settings[k] = base.settings[k];
+
+  // 配送先データの補修（住所プロパティの補完）
+  db.destinations.forEach(function (d) {
+    if (typeof d.address !== 'string') d.address = '';
+  });
 
   // カテゴリが消えた配送先は先頭カテゴリへ寄せる
   var ids = db.categories.map(function (c) { return c.id; });
@@ -103,6 +108,10 @@ function migrate(db) {
     });
     if (['inline', 'line', 'none'].indexOf(db.settings.pageName) < 0) db.settings.pageName = 'inline';
     db.v = 3;
+  }
+
+  if (db.v < 4) {
+    db.v = 4;
   }
 
   // ページ構造の補修
@@ -280,6 +289,13 @@ var BRANCH = '<svg viewBox="0 0 24 24"><path d="M8 4v9a4 4 0 0 0 4 4h5"/><path d
 var UPIC   = '<svg viewBox="0 0 24 24"><path d="m6 14 6-6 6 6"/></svg>';
 var DNIC   = '<svg viewBox="0 0 24 24"><path d="m6 10 6 6 6-6"/></svg>';
 var XIC    = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+var MAP_PIN = '<svg viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+
+function openMap(addr) {
+  if (!addr) return;
+  var url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
 
 function renderToday() {
   var d = parseKey(S.date);
@@ -432,13 +448,20 @@ function renderDest() {
     html += '<div class="cat-block"><div class="cat-title">' + esc(c.name) +
       '<span class="hist-n">' + items.length + '</span></div>';
     items.forEach(function (d) {
+      var mapBtn = d.address
+        ? '<button class="dest-map-btn" data-map="' + esc(d.address) + '" aria-label="' + esc(d.name) + 'の地図を開く">' + MAP_PIN + '</button>'
+        : '';
       html += '<div class="dest-row">' +
         '<button class="dest-main" data-edit="' + d.id + '">' +
         '<div class="dest-name">' + esc(d.name) + '</div>' +
+        (d.address ? '<div class="dest-addr">' + MAP_PIN + '<span>' + esc(d.address) + '</span></div>' : '') +
         (d.memo ? '<div class="dest-memo">' + esc(d.memo) + '</div>' : '') +
         '</button>' +
-        '<button class="dest-add" data-quick="' + d.id + '" aria-label="' + esc(d.name) + 'を' + fmtDate(S.date, 'md') + 'の日報に追加">' +
-          PLUS + '<span>追加</span></button>' +
+        '<div class="dest-actions">' +
+          mapBtn +
+          '<button class="dest-add" data-quick="' + d.id + '" aria-label="' + esc(d.name) + 'を' + fmtDate(S.date, 'md') + 'の日報に追加">' +
+            PLUS + '<span>追加</span></button>' +
+        '</div>' +
         '</div>';
     });
     html += '</div>';
@@ -594,7 +617,7 @@ function renderPickList() {
   var pool = DB.destinations.filter(function (d) {
     if (d.archived) return false;
     if (S.pickCat && d.catId !== S.pickCat) return false;
-    if (q && (d.name + ' ' + (d.memo || '')).toLowerCase().indexOf(q) < 0) return false;
+    if (q && (d.name + ' ' + (d.memo || '') + ' ' + (d.address || '')).toLowerCase().indexOf(q) < 0) return false;
     return true;
   });
 
@@ -605,10 +628,13 @@ function renderPickList() {
   }
 
   function row(d) {
+    var subItems = [esc(catName(d.catId))];
+    if (d.address) subItems.push(esc(d.address));
+    if (d.memo) subItems.push(esc(d.memo));
     return '<div class="pick-item' + (S.pickMode === 'course' ? ' solo' : '') + '">' +
       '<button class="pick-row" data-pick="' + d.id + '">' +
         '<div class="pick-name">' + esc(d.name) + '</div>' +
-        '<div class="pick-sub">' + esc(catName(d.catId)) + (d.memo ? ' ・ ' + esc(d.memo) : '') + '</div>' +
+        '<div class="pick-sub">' + subItems.join(' ・ ') + '</div>' +
       '</button>' +
       (S.pickMode === 'course' ? '' :
         '<button class="pick-tf" data-picktf="' + d.id + '" aria-label="' + esc(d.name) + 'で転送を引き取った">' +
@@ -667,6 +693,7 @@ function openDestEditor(id) {
   var d = id ? destOf(id) : null;
   $('#sh-dest-t').textContent = d ? '配送先を編集' : '配送先を登録';
   $('#dest-name').value = d ? d.name : '';
+  $('#dest-addr').value = d ? (d.address || '') : '';
   $('#dest-memo').value = d ? (d.memo || '') : '';
   fillCatSelect(d ? d.catId : DB.categories[0].id);
   $('#dest-del').hidden = !d;
@@ -679,14 +706,15 @@ function saveDest() {
   if (!name) { toast('配送先名を入力してください'); $('#dest-name').focus(); return; }
   var catId = $('#dest-cat').value;
   if (catId === '__new') { toast('カテゴリを選び直してください'); return; }
+  var address = $('#dest-addr').value.trim();
   var memo = $('#dest-memo').value.trim();
 
   if (S.editDest) {
     var d = destOf(S.editDest);
-    d.name = name; d.catId = catId; d.memo = memo;
+    d.name = name; d.catId = catId; d.address = address; d.memo = memo;
     save(); closeSheet(); render(); toast('保存しました');
   } else {
-    var nd = { id: uid('d-'), name: name, catId: catId, memo: memo, uses: 0 };
+    var nd = { id: uid('d-'), name: name, catId: catId, address: address, memo: memo, uses: 0 };
     DB.destinations.push(nd);
     save();
     // ピッカー経由で登録したときは、そのまま今日の日報に入れる
@@ -784,8 +812,10 @@ function copyText(t) {
    11. イベント配線
    ══════════════════════════════════════ */
 document.addEventListener('click', function (ev) {
-  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear],[data-page],[data-pagenew],[data-pagemenu],[data-hpage]') : null;
+  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear],[data-page],[data-pagenew],[data-pagemenu],[data-hpage],[data-map]') : null;
   if (!t) return;
+
+  if (t.dataset.map) { openMap(t.dataset.map); return; }
 
   if (t.dataset.clear === 'today') {
     var gc = curPage();
@@ -811,6 +841,15 @@ document.addEventListener('click', function (ev) {
     var u = pickupOf(st, stops);
     $('#stop-target').textContent = destName(st.destId) + (u ? '（' + destName(u.destId) + 'から引き取り）' : '');
     $('#stop-note').value = st.note || '';
+    var dd = destOf(st.destId);
+    if (dd && dd.address) {
+      $('#stop-map').hidden = false;
+      $('#stop-map-addr').textContent = dd.address;
+      $('#stop-map').dataset.map = dd.address;
+    } else {
+      $('#stop-map').hidden = true;
+      delete $('#stop-map').dataset.map;
+    }
     openSheet('sh-stop');
     return;
   }
@@ -920,6 +959,12 @@ $('#pick-new').addEventListener('click', function () { S.pickReturn = true; open
 /* 配送先エディタ */
 $('#dest-save').addEventListener('click', saveDest);
 $('#dest-name').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
+$('#dest-addr').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
+$('#dest-memo').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
+$('#stop-map').addEventListener('click', function () {
+  var addr = this.dataset.map;
+  if (addr) openMap(addr);
+});
 $('#dest-cat').addEventListener('change', function () {
   if (this.value !== '__new') return;
   var name = prompt('新しいカテゴリ名');
