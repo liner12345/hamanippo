@@ -118,7 +118,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   opacity:0;border:0;background:none;
 }
 .chip{
-  min-height:36px;padding:0 12px;border-radius:999px;
+  min-height:44px;padding:0 12px;border-radius:999px;
   border:1.5px solid var(--rule);background:var(--surface);
   font-size:13px;font-weight:600;white-space:nowrap;
 }
@@ -130,7 +130,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   padding:14px 14px 2px;
 }
 .courserow::-webkit-scrollbar{display:none}
-.courserow .chip{min-height:42px;font-size:14px;flex:none}
+.courserow .chip{min-height:44px;font-size:14px;flex:none}
 .course-chip{
   background:var(--ink);color:var(--surface);border-color:var(--ink);
   display:inline-flex;align-items:center;gap:7px;
@@ -140,6 +140,23 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   background:var(--hi);color:#131820;border-radius:999px;padding:2px 6px;line-height:1;
 }
 .chip-ghost{color:var(--muted);border-style:dashed}
+
+/* ルートのURLがあるコース：主ボタン（一括追加）と地図ボタンを1つの丸に収める。
+   構造は .page-pill / .page-more と同じ考え方。 */
+.course-pill{
+  display:inline-flex;align-items:stretch;flex:none;
+  border:1.5px solid var(--ink);border-radius:999px;
+  background:var(--ink);overflow:hidden;
+}
+.course-pill .course-chip{border:0;border-radius:0}
+.course-map{
+  width:44px;min-height:44px;flex:none;
+  display:grid;place-items:center;
+  background:var(--ink);color:var(--surface);
+  border-left:1px solid color-mix(in srgb,var(--surface) 35%,transparent);
+}
+.course-map:active{background:var(--surface-2);color:var(--ink)}
+.course-map svg{width:18px;height:18px}
 
 /* ── セクション見出し ───────────────── */
 .route-head,.pane-head{
@@ -152,7 +169,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   letter-spacing:.18em;color:var(--muted);
 }
 .route-head-right{display:flex;align-items:center;gap:10px}
-.txt-btn{min-height:40px;padding:0 6px;font-size:15px;font-weight:600;color:var(--muted)}
+.txt-btn{min-height:44px;display:inline-flex;align-items:center;padding:0 6px;font-size:15px;font-weight:600;color:var(--muted)}
 .count{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .txt-btn.danger{color:var(--danger)}
 .txt-btn.sm{
@@ -265,8 +282,8 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .page-more:active{background:var(--surface-2)}
 .page-more svg{width:20px;height:20px}
 .pagerow .chip-ghost{
-  align-self:center;flex:none;min-height:38px;font-size:13px;
-  margin:6px 0;
+  align-self:center;flex:none;min-height:44px;font-size:13px;
+  margin:0;
 }
 
 /* ── コース（灰色の面に置いて、ページと明確に分ける） ── */
@@ -306,7 +323,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .dest-addr svg{width:14px;height:14px;flex:none;opacity:.8}
 .dest-actions{display:flex;align-items:center;gap:6px}
 .dest-map-btn{
-  width:42px;min-height:42px;display:grid;place-items:center;
+  width:44px;min-height:44px;display:grid;place-items:center;
   border-radius:50%;color:var(--muted);border:1.5px solid var(--rule);
   background:var(--surface-2);
 }
@@ -314,7 +331,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .dest-map-btn svg{width:18px;height:18px}
 .dest-add{
   display:inline-flex;align-items:center;gap:3px;
-  min-height:42px;padding:0 14px 0 10px;border-radius:999px;
+  min-height:44px;padding:0 14px 0 10px;border-radius:999px;
   background:color-mix(in srgb,var(--hi) 20%,transparent);
   border:1.5px solid color-mix(in srgb,var(--hi) 60%,transparent);
   color:var(--ink);font-size:14px;font-weight:700;white-space:nowrap;
@@ -363,6 +380,16 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   color:var(--muted);white-space:nowrap;
 }
 
+/* 履歴の月見出し */
+.hist-month{
+  display:flex;align-items:center;gap:10px;
+  padding:18px 18px 8px;
+}
+.hist-month-t{font-size:15px;font-weight:700}
+.hist-month .chip{margin-left:auto;flex:none}
+.hist-row.is-last{border-bottom:1px solid var(--rule)}
+#mout-note{margin:8px 0 0}
+
 /* ── 固定アクション ─────────────────── */
 .actionbar{
   position:fixed;left:0;right:0;
@@ -380,6 +407,8 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   transition:transform .06s ease;
 }
 .btn:active{transform:scale(.98)}
+/* .btn は display:inline-flex を持つので、これが無いと hidden 属性が効かない */
+.btn[hidden]{display:none}
 .btn.sm{min-height:44px;padding:0 14px;font-size:14px}
 .btn-primary{flex:1;background:var(--hi);color:var(--hi-ink);box-shadow:0 3px 0 rgba(0,0,0,.14)}
 .btn-ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--rule)}
@@ -558,25 +587,25 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .cat-item{
   display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;
   background:var(--surface);border:1.5px solid var(--rule);border-radius:var(--r);
-  padding:8px 8px 8px 14px;margin-bottom:8px;min-height:var(--tap);
+  padding:4px 8px 4px 14px;margin-bottom:8px;min-height:var(--tap);
 }
 .cat-item input{
-  border:0;background:none;min-height:40px;width:100%;padding:0;
+  border:0;background:none;min-height:44px;width:100%;padding:0;
   font-size:15px;font-weight:600;
 }
-.cat-item button{width:40px;height:40px;display:grid;place-items:center;color:var(--muted);border-radius:8px}
+.cat-item button{width:44px;height:44px;display:grid;place-items:center;color:var(--muted);border-radius:8px}
 .cat-item button.del{color:var(--danger)}
 
 /* ── コース編集 ─────────────────────── */
 .btn-block{width:100%}
 .citem{
-  display:grid;grid-template-columns:34px 1fr 40px 40px 40px;align-items:center;gap:4px;
+  display:grid;grid-template-columns:34px 1fr 44px 44px 44px;align-items:center;gap:4px;
   background:var(--surface);border:1.5px solid var(--rule);border-radius:var(--r);
-  padding:6px 6px 6px 10px;margin-bottom:7px;min-height:var(--tap);
+  padding:4px 6px 4px 10px;margin-bottom:7px;min-height:var(--tap);
 }
 .cno{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--muted)}
 .cname{font-size:15px;font-weight:600;word-break:break-word;min-width:0}
-.citem button{width:40px;height:40px;display:grid;place-items:center;border-radius:8px;color:var(--muted)}
+.citem button{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;color:var(--muted)}
 .citem button:disabled{opacity:.25}
 .citem button.del{color:var(--danger)}
 .citem svg{width:19px;height:19px;stroke-width:2}
@@ -610,7 +639,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   white-space:pre-wrap;word-break:break-word;
 }
 .rule{border:0;border-top:1px solid var(--rule);margin:20px 0 16px}
-.note{font-size:12.5px;color:var(--muted);line-height:1.7;margin:0 0 14px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.7;margin:0 0 14px;white-space:pre-line}
 
 /* ── トースト ───────────────────────── */
 .toast{
@@ -639,6 +668,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 }
 .toast #toast-act{
   flex:none;color:#131820;font-weight:700;font-size:13px;
+  min-height:44px;display:inline-flex;align-items:center;
   padding:6px 12px;border-radius:6px;white-space:nowrap;
   background:var(--hi);
 }
