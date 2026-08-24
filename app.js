@@ -27,14 +27,15 @@ function save() {
 
 function freshDB() {
   return {
-    v: 4,
+    v: 6,
     categories: [{ id: 'c-base', name: '未分類' }],
     destinations: [],
     courses: [],
     reports: {},
     settings: {
       header: '', dateStyle: 'slash', transferStyle: 'src',
-      pageName: 'inline', number: false, footer: ''
+      pageName: 'inline', number: false, footer: '',
+      lastExport: '', lastRemind: ''
     }
   };
 }
@@ -65,6 +66,7 @@ function migrate(db) {
   // 存在しない配送先を指すコース項目を除く
   var dids = db.destinations.map(function (d) { return d.id; });
   db.courses.forEach(function (c) {
+    if (typeof c.mapUrl !== 'string') c.mapUrl = '';
     if (!Array.isArray(c.items)) { c.items = []; return; }
     c.items = c.items.filter(function (id) { return dids.indexOf(id) >= 0; });
   });
@@ -111,7 +113,19 @@ function migrate(db) {
   }
 
   if (db.v < 4) {
+    // v4 で destinations に address が加わった。値の補完は上の無条件の補修が兼ねるので、ここは版数の更新だけ
     db.v = 4;
+  }
+
+  if (db.v < 5) {
+    // v5 で courses に mapUrl（ルートのURL）が加わった。補完は上の無条件の補修が兼ねる
+    db.v = 5;
+  }
+
+  if (db.v < 6) {
+    // v6 で settings に lastExport / lastRemind が加わった。
+    // settings の欠損キーは上の for-in が base から補うので、ここは版数の更新だけ
+    db.v = 6;
   }
 
   // ページ構造の補修
@@ -124,6 +138,13 @@ function migrate(db) {
       if (!Array.isArray(g.stops)) g.stops = [];
       g.stops = g.stops.filter(function (x) { return x && !x.sep; });
     });
+  });
+
+  // 日付を前後に送っただけで作られた空の記録を捨てる（report() が get-or-create のため溜まる）。
+  // 行が1つも無く、ページ名も付いていない日付だけが対象。情報を持つものは消さない。
+  Object.keys(db.reports).forEach(function (key) {
+    var empty = db.reports[key].pages.every(function (g) { return !g.stops.length && !g.name; });
+    if (empty) delete db.reports[key];
   });
   return db;
 }
@@ -145,6 +166,8 @@ var WD = ['日', '月', '火', '水', '木', '金', '土'];
 function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function parseKey(k) { var a = k.split('-'); return new Date(+a[0], +a[1] - 1, +a[2]); }
 function shiftDate(k, n) { var d = parseKey(k); d.setDate(d.getDate() + n); return keyOf(d); }
+function monthKeyOf(k) { return k.slice(0, 7); }
+function fmtMonth(ym) { var a = ym.split('-'); return (+a[0]) + '年' + (+a[1]) + '月'; }
 
 function fmtDate(k, style) {
   var d = parseKey(k), y = d.getFullYear(), m = d.getMonth() + 1, da = d.getDate(), w = WD[d.getDay()];
@@ -153,6 +176,13 @@ function fmtDate(k, style) {
   if (style === 'jp') return y + '年' + m + '月' + da + '日(' + w + ')';
   if (style === 'md') return m + '/' + da + '(' + w + ')';
   return y + '/' + m + '/' + da + '(' + w + ')';
+}
+
+/* 利用者が入力した URL は https: のものだけ通す。javascript: を保存されても開かないための門。
+   保存時と開く直前の両方でこれを通すこと。 */
+function safeUrl(u) {
+  u = String(u == null ? '' : u).trim();
+  return /^https:\/\//i.test(u) ? u : '';
 }
 
 function destOf(id) { for (var i = 0; i < DB.destinations.length; i++) if (DB.destinations[i].id === id) return DB.destinations[i]; return null; }
@@ -183,7 +213,9 @@ var S = {
   pickCat: '',
   course: null,
   editDest: null,
-  stopId: null
+  stopId: null,
+  monthKey: null,
+  monthMode: 'full'
 };
 
 /* ══════════════════════════════════════
@@ -280,6 +312,107 @@ function buildText(k, idx) {
   return out.join('\n').replace(/\s+$/, '');
 }
 
+
+/* 月のまとめ。日報1通の出力（buildText）とは別物として組み立てる。
+   lineFor に渡す stops は必ずそのページの配列で、ページを跨いで連結しない。 */
+var MRULE = '━━━━━━━━━━━━';
+
+function monthStats(ym) {
+  var days = [], count = 0;
+  var destCnt = Object.create(null), courseCnt = Object.create(null);
+  Object.keys(DB.reports).filter(function (k) { return monthKeyOf(k) === ym; }).sort()
+    .forEach(function (k) {
+      var pages = [], n = 0;
+      pagesOf(k).forEach(function (g, i) {
+        if (!g.stops.length) return;
+        pages.push({ g: g, i: i });
+        n += g.stops.length;
+        var seen = Object.create(null);
+        g.stops.forEach(function (x) {
+          var nm = destName(x.destId);
+          destCnt[nm] = (destCnt[nm] || 0) + 1;
+          // コースは「ページ×コース」で1回。同じページで2回押しても2回にしない
+          if (x.src && !seen[x.src]) { seen[x.src] = 1; courseCnt[x.src] = (courseCnt[x.src] || 0) + 1; }
+        });
+      });
+      if (!pages.length) return;
+      count += n;
+      days.push({ k: k, pages: pages, n: n });
+    });
+
+  var byDest = Object.keys(destCnt).map(function (nm) { return { name: nm, n: destCnt[nm] }; })
+    .sort(function (a, b) { return b.n - a.n || (a.name < b.name ? -1 : 1); });
+  var byCourse = Object.keys(courseCnt).map(function (id) {
+    var c = courseOf(id);
+    return { name: c ? c.name : '（削除されたコース）', n: courseCnt[id] };
+  }).sort(function (a, b) { return b.n - a.n; });
+
+  return { days: days, count: count, byDest: byDest, byCourse: byCourse };
+}
+
+function buildMonthText(ym, mode) {
+  var s = DB.settings, st = monthStats(ym), out = [], brief = (mode === 'brief');
+  if (!st.days.length) return fmtMonth(ym) + ' の記録はありません。';
+
+  var head = '【' + fmtMonth(ym) + 'の配送記録】';
+  if (brief) {
+    out.push(head + '稼働' + st.days.length + '日 / ' + st.count + '件');
+    out.push('');
+  } else {
+    var first = st.days[0].k, last = st.days[st.days.length - 1].k;
+    out.push(head);
+    out.push(fmtDate(first, s.dateStyle) + '〜' + fmtDate(last, 'md') +
+      ' 稼働' + st.days.length + '日 / ' + st.count + '件');
+  }
+
+  // 行番号は日報1通のための設定。月のまとめで使うと日ごとに 1. からやり直しになるので伏せる
+  var keepNum = s.number;
+  s.number = false;
+  try {
+    st.days.forEach(function (d) {
+      if (brief) {
+        var line = fmtDate(d.k, 'md') + ' ' + d.n + '件';
+        if (d.pages.length > 1) {
+          line += '（' + d.pages.map(function (p) {
+            return pageLabel(p.g, p.i) + p.g.stops.length;
+          }).join('・') + '）';
+        }
+        out.push(line);
+        return;
+      }
+      out.push(MRULE);
+      out.push(fmtDate(d.k, 'md') + ' ' + d.n + '件');
+      d.pages.forEach(function (p) {
+        if (d.pages.length > 1) out.push(' ' + pageLabel(p.g, p.i) + ' ' + p.g.stops.length + '件');
+        p.g.stops.forEach(function (x, n) { out.push('  ・' + lineFor(x, n, p.g.stops)); });
+      });
+    });
+    if (!brief) out.push(MRULE);
+  } finally {
+    s.number = keepNum;
+  }
+
+  if (st.byDest.length) {
+    out.push('');
+    if (brief) {
+      out.push('よく行った先: ' + st.byDest.slice(0, 5).map(function (x) { return x.name + x.n; }).join(' / '));
+    } else {
+      out.push('■ よく行った先');
+      st.byDest.slice(0, 10).forEach(function (x) { out.push('  ' + x.name + ' ' + x.n + '回'); });
+    }
+  }
+  if (st.byCourse.length) {
+    if (brief) {
+      out.push('コース別: ' + st.byCourse.map(function (x) { return x.name + x.n + '回'; }).join(' / '));
+    } else {
+      out.push('');
+      out.push('■ コース別');
+      st.byCourse.forEach(function (x) { out.push('  ' + x.name + ' ' + x.n + '回'); });
+    }
+  }
+  return out.join('\n').replace(/\s+$/, '');
+}
+
 /* ══════════════════════════════════════
    4. 描画
    ══════════════════════════════════════ */
@@ -295,6 +428,12 @@ function openMap(addr) {
   if (!addr) return;
   var url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
   window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function openRoute(cid) {
+  var c = courseOf(cid), u = c ? safeUrl(c.mapUrl) : '';
+  if (!u) { toast('このコースにはルートのURLが登録されていません'); return; }
+  window.open(u, '_blank', 'noopener,noreferrer');
 }
 
 function renderToday() {
@@ -346,8 +485,13 @@ function renderPageBar() {
 
 function renderCourseRow() {
   var html = DB.courses.map(function (c) {
-    return '<button class="chip course-chip" data-course="' + c.id + '">' +
+    var chip = '<button class="chip course-chip" data-course="' + c.id + '">' +
       esc(c.name) + '<span class="chip-n">' + c.items.length + '</span></button>';
+    if (!safeUrl(c.mapUrl)) return chip;
+    // ルートのURLがあるコースだけ、地図ボタンを並べた1つの丸にする
+    return '<span class="course-pill">' + chip +
+      '<button class="course-map" data-cmap="' + c.id + '" aria-label="' + esc(c.name) + 'を地図で開く">' +
+      MAP_PIN + '</button></span>';
   }).join('');
   html += '<button class="chip chip-ghost" data-clist="1">' +
     (DB.courses.length ? 'コースを編集' : '＋ コースを作る') + '</button>';
@@ -413,10 +557,11 @@ function openCourseList() { renderCourseList(); openSheet('sh-clist'); }
 function openCourseEditor(cid) {
   var c = cid ? DB.courses.filter(function (x) { return x.id === cid; })[0] : null;
   S.course = c
-    ? { id: c.id, name: c.name, items: c.items.slice() }
-    : { id: null, name: '', items: [] };
+    ? { id: c.id, name: c.name, items: c.items.slice(), mapUrl: c.mapUrl || '' }
+    : { id: null, name: '', items: [], mapUrl: '' };
   $('#sh-cedit-t').textContent = c ? 'コースを編集' : 'コースを作る';
   $('#c-name').value = S.course.name;
+  $('#c-map').value = S.course.mapUrl;
   $('#c-del').hidden = !c;
   renderCourseItems();
   openSheet('sh-cedit', 'sh-clist');
@@ -497,17 +642,34 @@ function renderHist() {
     return;
   }
 
-  $('#hist-list').innerHTML = rows.map(function (r) {
-    var st = r.g.stops, maxShow = 2;
-    var showNames = st.slice(0, maxShow).map(function (x) { return destName(x.destId); }).join('、');
-    var more = st.length > maxShow ? '<span class="hist-sub-more">（他' + (st.length - maxShow) + '）</span>' : '';
-    var badge = r.many ? '<span class="hist-page">' + esc(pageLabel(r.g, r.i)) + '</span>' : '';
-    return '<button class="hist-row" data-date="' + r.k + '" data-hpage="' + r.i + '">' +
-      '<span class="hist-main">' +
-        '<span class="hist-date">' + esc(fmtDate(r.k, 'slash0')) + badge + '</span>' +
-        '<span class="hist-sub"><span class="hist-sub-name">' + esc(showNames) + '</span>' + more + '</span>' +
-      '</span>' +
-      '<span class="hist-n">' + st.length + '件</span></button>';
+  // 月ごとにまとめる（並びは日付の降順のまま）
+  var months = [];
+  rows.forEach(function (r) {
+    var ym = monthKeyOf(r.k), cur = months[months.length - 1];
+    if (!cur || cur.ym !== ym) { cur = { ym: ym, rows: [] }; months.push(cur); }
+    cur.rows.push(r);
+  });
+
+  $('#hist-list').innerHTML = months.map(function (m) {
+    var ms = monthStats(m.ym);
+    var head = '<div class="hist-month">' +
+      '<span class="hist-month-t">' + esc(fmtMonth(m.ym)) + '</span>' +
+      '<span class="hist-n">' + ms.days.length + '日 / ' + ms.count + '件</span>' +
+      '<button class="chip" data-month="' + m.ym + '">まとめて出力</button>' +
+      '</div>';
+    return head + m.rows.map(function (r, n) {
+      var stp = r.g.stops, maxShow = 2;
+      var showNames = stp.slice(0, maxShow).map(function (x) { return destName(x.destId); }).join('、');
+      var more = stp.length > maxShow ? '<span class="hist-sub-more">（他' + (stp.length - maxShow) + '）</span>' : '';
+      var badge = r.many ? '<span class="hist-page">' + esc(pageLabel(r.g, r.i)) + '</span>' : '';
+      return '<button class="hist-row' + (n === m.rows.length - 1 ? ' is-last' : '') + '"' +
+        ' data-date="' + r.k + '" data-hpage="' + r.i + '">' +
+        '<span class="hist-main">' +
+          '<span class="hist-date">' + esc(fmtDate(r.k, 'slash0')) + badge + '</span>' +
+          '<span class="hist-sub"><span class="hist-sub-name">' + esc(showNames) + '</span>' + more + '</span>' +
+        '</span>' +
+        '<span class="hist-n">' + stp.length + '件</span></button>';
+    }).join('');
   }).join('');
 }
 
@@ -754,9 +916,15 @@ function loadSettingsForm() {
   $('#set-transfer').value = s.transferStyle;
   $('#set-pagename').value = s.pageName;
   $('#set-number').checked = !!s.number;
-  $('#storage-note').textContent = memoryOnly
-    ? 'この環境ではブラウザ保存が使えないため、タブを閉じると内容が消えます。GitHub Pages などで開くと保存されます。'
-    : 'データは端末のブラウザ内にだけ保存されます。ホーム画面に追加して使うと消えにくくなります。機種変更の前にはバックアップを書き出してください。';
+  if (memoryOnly) {
+    $('#storage-note').textContent = 'この環境ではブラウザ保存が使えないため、タブを閉じると内容が消えます。GitHub Pages などで開くと保存されます。';
+  } else {
+    $('#storage-note').textContent =
+      'データは端末のブラウザ内にだけ保存されます。ホーム画面に追加して使うと消えにくくなります。機種変更の前にはバックアップを書き出してください。\n' +
+      (s.lastExport
+        ? '最後に書き出したのは ' + fmtDate(s.lastExport, 'slash0') + ' です。'
+        : 'まだ一度も書き出していません。');
+  }
 }
 function bindSettings() {
   function on(id, prop, isCheck) {
@@ -771,7 +939,37 @@ function bindSettings() {
   on('#set-number', 'number', true);
 }
 
+function stopCount() {
+  var n = 0;
+  Object.keys(DB.reports).forEach(function (k) {
+    pagesOf(k).forEach(function (g) { n += g.stops.length; });
+  });
+  return n;
+}
+
+function daysBetween(a, b) {
+  return Math.round((parseKey(b) - parseKey(a)) / 86400000);
+}
+
+/* 起動時に一度だけ、バックアップを促す。
+   localStorage は Safari のデータ削除や iOS の破棄で消えるので、これが唯一の予防線。 */
+function backupReminder() {
+  if (memoryOnly) return;
+  var s = DB.settings, today = keyOf(new Date());
+  if (stopCount() < 20) return;                                   // 使い始めの人には出さない
+  if (s.lastExport && daysBetween(s.lastExport, today) < 30) return;
+  if (s.lastRemind && daysBetween(s.lastRemind, today) < 7) return;  // 促すのは7日に1回まで
+  s.lastRemind = today;
+  save();
+  toast(s.lastExport
+    ? 'バックアップを書き出してから30日以上たっています'
+    : '記録がたまっています。バックアップを書き出しておくと安心です',
+    '書き出す', exportJSON);
+}
+
 function exportJSON() {
+  DB.settings.lastExport = keyOf(new Date());
+  save();
   var blob = new Blob([JSON.stringify(DB, null, 2)], { type: 'application/json' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -791,6 +989,23 @@ function openOutput() {
     : '日報テキスト';
   $('#out-text').textContent = buildText(S.date, i);
   openSheet('sh-out');
+}
+
+function openMonthOutput(ym) {
+  S.monthKey = ym;
+  S.monthMode = 'full';
+  $('#sh-mout-t').textContent = fmtMonth(ym) + 'のまとめ';
+  renderMonthOut();
+  openSheet('sh-mout');
+}
+function renderMonthOut() {
+  var t = buildMonthText(S.monthKey, S.monthMode);
+  $('#mout-text').textContent = t;
+  $('#mout-note').textContent = '約' + t.length + '字' +
+    (S.monthMode === 'full' ? '（LINEへ直接送るときは「要約」を使ってください）' : '');
+  Array.prototype.forEach.call(document.querySelectorAll('[data-mmode]'), function (b) {
+    b.classList.toggle('is-on', b.dataset.mmode === S.monthMode);
+  });
 }
 function copyText(t) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -812,7 +1027,7 @@ function copyText(t) {
    11. イベント配線
    ══════════════════════════════════════ */
 document.addEventListener('click', function (ev) {
-  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear],[data-page],[data-pagenew],[data-pagemenu],[data-hpage],[data-map]') : null;
+  var t = ev.target.closest ? ev.target.closest('[data-tab],[data-menu],[data-pick],[data-picktf],[data-pcat],[data-edit],[data-quick],[data-date],[data-catdel],[data-restore],[data-close],[data-course],[data-clist],[data-cedit],[data-cup],[data-cdn],[data-crm],[data-clear],[data-page],[data-pagenew],[data-pagemenu],[data-hpage],[data-map],[data-month],[data-mmode],[data-cmap]') : null;
   if (!t) return;
 
   if (t.dataset.map) { openMap(t.dataset.map); return; }
@@ -868,6 +1083,7 @@ document.addEventListener('click', function (ev) {
     S.page = pi; renderToday(); return;
   }
 
+  if (t.dataset.cmap) { openRoute(t.dataset.cmap); return; }
   if (t.dataset.course) { applyCourse(t.dataset.course); return; }
   if (t.dataset.clist) { openCourseList(); return; }
   if (t.dataset.cedit) { openCourseEditor(t.dataset.cedit); return; }
@@ -898,6 +1114,9 @@ document.addEventListener('click', function (ev) {
       (ps0.length > 1 ? ' の' + pageLabel(g0, pageIdx(S.date)) : '') + ' に追加');
     return;
   }
+
+  if (t.dataset.month) { openMonthOutput(t.dataset.month); return; }
+  if (t.dataset.mmode) { S.monthMode = t.dataset.mmode; renderMonthOut(); return; }
 
   if (t.dataset.date) {
     S.date = t.dataset.date;
@@ -1025,6 +1244,7 @@ function openPageSheet() {
   $('#sh-page-t').textContent = pageLabel(ps[i], i) + ' の操作';
   $('#page-name').value = ps[i].name || '';
   $('#page-name').placeholder = '例：午前（空欄なら「ページ' + (i + 1) + '」）';
+  $('#page-dup').disabled = !ps[i].stops.length || ps.length >= 12;
   $('#page-left').disabled = i === 0;
   $('#page-right').disabled = i === ps.length - 1;
   $('#page-del').hidden = ps.length < 2;
@@ -1038,6 +1258,31 @@ function addPage() {
   S.page = ps.length - 1;
   save(); renderToday();
   toast('ページ' + ps.length + ' を追加');
+}
+
+function duplicatePage() {
+  var ps = pagesOf(S.date), i = pageIdx(S.date), cur = ps[i];
+  if (ps.length >= 12) { toast('1日に作れるページは12までです'); return; }
+  if (!cur.stops.length) { toast('空のページは複製できません'); return; }
+
+  // stops[].from は「引き取った行のID」。複製した行を指すように張り替える。
+  // 張り替えないと、複製先の転送が元のページの行を指してページ独立性が壊れる。
+  var map = {};
+  var stops = cur.stops.map(function (st) {
+    var nid = uid('s-');
+    map[st.id] = nid;
+    return { id: nid, destId: st.destId, from: st.from, note: st.note, src: st.src };
+  });
+  stops.forEach(function (st) {
+    st.from = (st.from && map[st.from]) ? map[st.from] : null;
+    var d = destOf(st.destId); if (d) d.uses = (d.uses || 0) + 1;
+  });
+
+  var g = { id: uid('g-'), name: cur.name ? cur.name + ' のコピー' : '', stops: stops };
+  ps.splice(i + 1, 0, g);
+  S.page = i + 1;
+  save(); closeSheet(); renderToday();
+  toast(pageLabel(g, i + 1) + ' に複製しました（' + stops.length + '件）');
 }
 
 function movePage(dir) {
@@ -1054,6 +1299,7 @@ $('#page-save').addEventListener('click', function () {
   save(); closeSheet(); renderToday(); toast('保存しました');
 });
 $('#page-name').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('#page-save').click(); });
+$('#page-dup').addEventListener('click', duplicatePage);
 $('#page-left').addEventListener('click', function () { movePage(-1); });
 $('#page-right').addEventListener('click', function () { movePage(1); });
 $('#page-del').addEventListener('click', function () {
@@ -1074,11 +1320,19 @@ $('#c-save').addEventListener('click', function () {
   var name = $('#c-name').value.trim();
   if (!name) { toast('コース名を入力してください'); $('#c-name').focus(); return; }
   if (!S.course.items.length) { toast('配送先を1件以上追加してください'); return; }
+  var raw = $('#c-map').value.trim();
+  if (raw && !safeUrl(raw)) {
+    toast('ルートのURLは https:// で始まるものだけ登録できます');
+    $('#c-map').focus();
+    return;
+  }
+  var mapUrl = safeUrl(raw);
+  S.course.mapUrl = mapUrl;
   if (S.course.id) {
     var c = DB.courses.filter(function (x) { return x.id === S.course.id; })[0];
-    c.name = name; c.items = S.course.items.slice();
+    c.name = name; c.items = S.course.items.slice(); c.mapUrl = mapUrl;
   } else {
-    DB.courses.push({ id: uid('k-'), name: name, items: S.course.items.slice() });
+    DB.courses.push({ id: uid('k-'), name: name, items: S.course.items.slice(), mapUrl: mapUrl });
   }
   save(); closeSheet(); renderCourseList(); renderCourseRow();
   toast('「' + name + '」を保存しました');
@@ -1103,6 +1357,20 @@ if (navigator.share) {
 } else {
   $('#out-share').hidden = true;
 }
+/* 月のまとめ出力 */
+$('#mout-copy').addEventListener('click', function () { copyText(buildMonthText(S.monthKey, S.monthMode)); });
+$('#mout-line').addEventListener('click', function () {
+  var t = buildMonthText(S.monthKey, S.monthMode);
+  window.location.href = 'https://line.me/R/share?text=' + encodeURIComponent(t);
+});
+if (navigator.share) {
+  $('#mout-share').addEventListener('click', function () {
+    navigator.share({ text: buildMonthText(S.monthKey, S.monthMode) }).catch(function () {});
+  });
+} else {
+  $('#mout-share').hidden = true;
+}
+
 $('#toast-act').addEventListener('click', function () {
   var f = toastFn; toastFn = null; $('#toast').hidden = true; if (f) f();
 });
@@ -1146,6 +1414,7 @@ $('#cat-new').addEventListener('keydown', function (e) { if (e.key === 'Enter') 
    12. 起動
    ══════════════════════════════════════ */
 setTab('today');
+backupReminder();
 
 /* ピンチズームやダブルタップ拡大などのジェスチャを抑止 */
 document.addEventListener('gesturestart', function (e) { e.preventDefault(); });

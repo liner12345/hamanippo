@@ -1,7 +1,8 @@
 /* 配送日報 — オフライン用 Service Worker
    ファイルを更新したら CACHE の数字を上げてください */
-const CACHE = 'nippou-v20';
-const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'nippou-v24';
+const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest',
+               './icon.svg', './icon-192.png', './icon-512.png', './icon-180.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

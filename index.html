@@ -209,6 +209,33 @@
   </div>
 </section>
 
+<!-- ══ シート：月のまとめ出力 ══ -->
+<section class="sheet tall" id="sh-mout" hidden aria-labelledby="sh-mout-t">
+  <div class="sheet-grip"></div>
+  <header class="sheet-head">
+    <h2 id="sh-mout-t">月のまとめ</h2>
+    <button class="txt-btn" data-close>閉じる</button>
+  </header>
+  <div class="sheet-fixed">
+    <div class="chiprow">
+      <button class="chip" data-mmode="full">詳細</button>
+      <button class="chip" data-mmode="brief">要約</button>
+    </div>
+    <p class="note" id="mout-note"></p>
+  </div>
+  <div class="sheet-body">
+    <pre class="out" id="mout-text"></pre>
+  </div>
+  <div class="sheet-foot col">
+    <button class="btn btn-primary" id="mout-share">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="m8 7.5 4-3.5 4 3.5"/><path d="M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/></svg>
+      共有する
+    </button>
+    <button class="btn btn-line" id="mout-line">LINEで直接送る</button>
+    <button class="btn btn-ghost" id="mout-copy">テキストをコピー</button>
+  </div>
+</section>
+
 <!-- ══ シート：カテゴリ管理 ══ -->
 <section class="sheet" id="sh-cat" hidden aria-labelledby="sh-cat-t">
   <div class="sheet-grip"></div>
@@ -310,6 +337,10 @@
       <input type="text" id="page-name" placeholder="例：午前" autocomplete="off">
     </label>
     <div class="menu">
+      <button class="menu-item" id="page-dup">
+        <strong>このページを複製</strong>
+        <small>同じ配送先を並べた新しいページを、すぐ右に作ります</small>
+      </button>
       <button class="menu-item" id="page-left">前のページと入れ替える</button>
       <button class="menu-item" id="page-right">次のページと入れ替える</button>
       <button class="menu-item danger" id="page-del">このページを削除</button>
@@ -344,6 +375,10 @@
     <label class="field">
       <span class="field-label">コース名</span>
       <input type="text" id="c-name" placeholder="例：定期配送" autocomplete="off">
+    </label>
+    <label class="field">
+      <span class="field-label">ルートのURL<span class="opt">任意・地図アプリ</span></span>
+      <input type="url" id="c-map" placeholder="例：https://maps.app.goo.gl/…" autocomplete="off" inputmode="url">
     </label>
     <div class="field-label">回る順番<span class="opt" id="c-count">0件</span></div>
     <div id="c-items"></div>
