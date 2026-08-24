@@ -185,6 +185,12 @@ function safeUrl(u) {
   return /^https:\/\//i.test(u) ? u : '';
 }
 
+/* 一覧に出すための短縮表示。開くときは必ず元の URL を safeUrl() に通すこと */
+function shortUrl(u) {
+  var s = String(u).replace(/^https:\/\//i, '');
+  return s.length > 42 ? s.slice(0, 41) + '…' : s;
+}
+
 function destOf(id) { for (var i = 0; i < DB.destinations.length; i++) if (DB.destinations[i].id === id) return DB.destinations[i]; return null; }
 function destName(id) { var d = destOf(id); return d ? d.name : '（削除された配送先）'; }
 function catOf(id) { for (var i = 0; i < DB.categories.length; i++) if (DB.categories[i].id === id) return DB.categories[i]; return null; }
@@ -502,7 +508,7 @@ function courseOf(id) { return DB.courses.filter(function (x) { return x.id === 
 
 function applyCourse(cid) {
   var c = courseOf(cid);
-  if (!c || !c.items.length) { toast('このコースには配送先が入っていません'); return; }
+  if (!c || !c.items.length) { toast('このコースには配送先が入っていません'); return false; }
   var g = curPage();
   undoSnapshot = { date: S.date, pageId: g.id, name: g.name, stops: g.stops.slice() };
 
@@ -516,6 +522,7 @@ function applyCourse(cid) {
   });
   save(); renderToday();
   toast(c.name + ' の' + c.items.length + '件を追加', '取り消す', undoApply);
+  return true;
 }
 
 var undoSnapshot = null;
@@ -536,23 +543,37 @@ function undoApply() {
 
 function renderCourseList() {
   if (!DB.courses.length) {
-    $('#clist').innerHTML = '<div class="empty"><p class="empty-title">コースがまだありません</p>' +
-      '<p class="empty-sub">よく回る順番を1つ登録しておくと、ボタン1つでその日の日報に並びます。</p></div>';
+    $('#course-list').innerHTML = '<div class="empty"><p class="empty-title">コースがまだありません</p>' +
+      '<p class="empty-sub">いつも同じ順番で回る先をまとめて登録しておくと、ボタン1つで日報に並びます。' +
+      'Googleマップで組んだルートのURLも一緒に登録できます。</p></div>';
     return;
   }
-  $('#clist').innerHTML = DB.courses.map(function (c) {
+  // 見た目は配送先タブの行をそのまま流用する（.dest-row / .dest-main / .dest-actions）
+  $('#course-list').innerHTML = '<div class="cat-block">' + DB.courses.map(function (c) {
     var maxShow = 2;
     var showNames = c.items.slice(0, maxShow).map(function (id) { return destName(id); }).join('、');
     var moreCount = c.items.length > maxShow ? c.items.length - maxShow : 0;
-    var moreHtml = moreCount > 0 ? '<span class="hist-sub-more">（他' + moreCount + '）</span>' : '';
-    return '<button class="hist-row" data-cedit="' + c.id + '">' +
-      '<div class="hist-main"><span class="dest-name">' + esc(c.name) + '</span>' +
-      '<span class="hist-sub"><span class="hist-sub-name">' + esc(showNames) + '</span>' + moreHtml + '</span></div>' +
-      '<span class="hist-n">' + c.items.length + '件</span></button>';
-  }).join('');
+    var url = safeUrl(c.mapUrl);
+    var routeLine = url
+      ? '<div class="dest-addr">' + MAP_PIN + '<span>' + esc(shortUrl(url)) + '</span></div>'
+      : '<div class="dest-addr is-none">' + MAP_PIN + '<span>ルート未登録 — タップして追加</span></div>';
+    return '<div class="dest-row">' +
+      '<button class="dest-main" data-cedit="' + c.id + '">' +
+        '<div class="dest-name">' + esc(c.name) +
+          '<span class="hist-n"> ' + c.items.length + '件</span></div>' +
+        '<div class="dest-memo">' + esc(showNames) +
+          (moreCount ? '（他' + moreCount + '）' : '') + '</div>' +
+        routeLine +
+      '</button>' +
+      '<div class="dest-actions">' +
+        (url ? '<button class="dest-map-btn" data-cmap="' + c.id + '" aria-label="' +
+          esc(c.name) + 'を地図で開く">' + MAP_PIN + '</button>' : '') +
+        '<button class="dest-add" data-course="' + c.id + '" aria-label="' +
+          esc(c.name) + 'を日報に追加">' + PLUS + '<span>追加</span></button>' +
+      '</div>' +
+      '</div>';
+  }).join('') + '</div>';
 }
-
-function openCourseList() { renderCourseList(); openSheet('sh-clist'); }
 
 function openCourseEditor(cid) {
   var c = cid ? DB.courses.filter(function (x) { return x.id === cid; })[0] : null;
@@ -564,7 +585,7 @@ function openCourseEditor(cid) {
   $('#c-map').value = S.course.mapUrl;
   $('#c-del').hidden = !c;
   renderCourseItems();
-  openSheet('sh-cedit', 'sh-clist');
+  openSheet('sh-cedit');
 }
 
 function renderCourseItems() {
@@ -676,6 +697,7 @@ function renderHist() {
 function render() {
   if (S.tab === 'today') { renderToday(); renderCourseRow(); }
   if (S.tab === 'dest') renderDest();
+  if (S.tab === 'course') renderCourseList();
   if (S.tab === 'hist') renderHist();
 }
 
@@ -686,6 +708,7 @@ function setTab(name) {
   S.tab = name;
   $('#tab-today').hidden = name !== 'today';
   $('#tab-dest').hidden = name !== 'dest';
+  $('#tab-course').hidden = name !== 'course';
   $('#tab-hist').hidden = name !== 'hist';
   Array.prototype.forEach.call(document.querySelectorAll('.tabbtn'), function (b) {
     var on = b.dataset.tab === name;
@@ -695,9 +718,10 @@ function setTab(name) {
   $('#actionbar').hidden = name === 'hist';
   document.body.classList.toggle('no-actions', name === 'hist');
   $('#btn-output').hidden = name !== 'today';
-  $('#btn-add').innerHTML = name === 'dest'
-    ? '<span class="plus" aria-hidden="true">＋</span> 新しい配送先を登録'
-    : '<span class="plus" aria-hidden="true">＋</span> 配送先を追加';
+  $('#btn-add').innerHTML =
+    name === 'dest' ? '<span class="plus" aria-hidden="true">＋</span> 新しい配送先を登録' :
+    name === 'course' ? '<span class="plus" aria-hidden="true">＋</span> 新しいコースを作る' :
+    '<span class="plus" aria-hidden="true">＋</span> 配送先を追加';
   window.scrollTo(0, 0);
   render();
 }
@@ -1084,8 +1108,12 @@ document.addEventListener('click', function (ev) {
   }
 
   if (t.dataset.cmap) { openRoute(t.dataset.cmap); return; }
-  if (t.dataset.course) { applyCourse(t.dataset.course); return; }
-  if (t.dataset.clist) { openCourseList(); return; }
+  if (t.dataset.course) {
+    // コースタブから足したときは、結果が見える日報タブへ移る
+    if (applyCourse(t.dataset.course) && S.tab === 'course') setTab('today');
+    return;
+  }
+  if (t.dataset.clist) { setTab('course'); return; }
   if (t.dataset.cedit) { openCourseEditor(t.dataset.cedit); return; }
   if (t.dataset.cup || t.dataset.cdn) {
     var up = 'cup' in t.dataset;
@@ -1165,6 +1193,7 @@ $('#d-input').addEventListener('change', function () { if (this.value) goDate(th
 /* 主要ボタン */
 $('#btn-add').addEventListener('click', function () {
   if (S.tab === 'dest') { S.pickReturn = false; openDestEditor(null); }
+  else if (S.tab === 'course') openCourseEditor(null);
   else openPicker(null);
 });
 $('#btn-output').addEventListener('click', openOutput);
@@ -1312,8 +1341,6 @@ $('#page-del').addEventListener('click', function () {
 });
 
 /* コース */
-$('#c-new').addEventListener('click', function () { openCourseEditor(null); });
-$('#cedit-back').addEventListener('click', closeSheet);
 $('#c-add').addEventListener('click', function () { openPicker(null, 'course'); });
 $('#c-name').addEventListener('input', function () { S.course.name = this.value; });
 $('#c-save').addEventListener('click', function () {

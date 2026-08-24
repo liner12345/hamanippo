@@ -78,6 +78,12 @@
     </details>
   </section>
 
+  <!-- ══ コースタブ ══ -->
+  <section class="tab" id="tab-course" hidden>
+    <div class="pane-head"><span class="eyebrow">COURSE</span></div>
+    <div id="course-list"></div>
+  </section>
+
   <!-- ══ 履歴タブ ══ -->
   <section class="tab" id="tab-hist" hidden>
     <div class="pane-head"><span class="eyebrow">LOG</span></div>
@@ -102,6 +108,10 @@
   <button class="tabbtn" data-tab="dest" role="tab" aria-selected="false">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
     <span>配送先</span>
+  </button>
+  <button class="tabbtn" data-tab="course" role="tab" aria-selected="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="19" r="2"/><circle cx="19" cy="5" r="2"/><path d="M5 17v-5h7V7h5"/></svg>
+    <span>コース</span>
   </button>
   <button class="tabbtn" data-tab="hist" role="tab" aria-selected="false">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg>
@@ -351,25 +361,12 @@
   </div>
 </section>
 
-<!-- ══ シート：コース一覧 ══ -->
-<section class="sheet" id="sh-clist" hidden aria-labelledby="sh-clist-t">
-  <div class="sheet-grip"></div>
-  <header class="sheet-head">
-    <h2 id="sh-clist-t">コース</h2>
-    <button class="txt-btn" data-close>閉じる</button>
-  </header>
-  <div class="sheet-body"><div id="clist"></div></div>
-  <div class="sheet-foot">
-    <button class="btn btn-primary" id="c-new"><span class="plus" aria-hidden="true">＋</span> 新しいコースを作る</button>
-  </div>
-</section>
-
 <!-- ══ シート：コース編集 ══ -->
 <section class="sheet tall" id="sh-cedit" hidden aria-labelledby="sh-cedit-t">
   <div class="sheet-grip"></div>
   <header class="sheet-head">
     <h2 id="sh-cedit-t">コースを作る</h2>
-    <button class="txt-btn" id="cedit-back">戻る</button>
+    <button class="txt-btn" data-close>閉じる</button>
   </header>
   <div class="sheet-body">
     <label class="field">
