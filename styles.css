@@ -321,6 +321,8 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   display:flex;align-items:center;gap:4px;word-break:break-word;
 }
 .dest-addr svg{width:14px;height:14px;flex:none;opacity:.8}
+/* ルート未登録のコース：あることは見せて、登録済みとは区別する */
+.dest-addr.is-none{opacity:.6;font-style:italic}
 .dest-actions{display:flex;align-items:center;gap:6px}
 .dest-map-btn{
   width:44px;min-height:44px;display:grid;place-items:center;
@@ -419,7 +421,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 /* ── タブバー ───────────────────────── */
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:19;
-  display:grid;grid-template-columns:repeat(3,1fr);
+  display:grid;grid-template-columns:repeat(4,1fr);
   background:var(--surface);border-top:1px solid var(--rule);
   padding-bottom:var(--safe);
 }
