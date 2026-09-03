@@ -92,10 +92,16 @@ button{cursor:pointer;border:0;background:none;padding:0}
 /* ── メイン ─────────────────────────── */
 main{
   flex:1 0 auto;
+  display:flex;flex-direction:column;
   padding:0 0 calc(140px + var(--safe));
 }
 /* 操作バーが無いタブ（履歴）は、その分だけ下余白を減らす */
 body.no-actions main{padding-bottom:calc(74px + var(--safe))}
+/* 表示中のタブが main の余りを受け取る。
+   これが無いと、記録の無い日に案内文が画面の上半分へ貼り付き、
+   その下に 270px 以上の空白が残る */
+.tab{display:flex;flex-direction:column;flex:1;min-height:0}
+/* [hidden] は .tab より詳細度が高いので、上の display:flex には勝つ */
 .tab[hidden]{display:none}
 
 /* ── 日付バー ───────────────────────── */
@@ -296,6 +302,15 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 
 /* ── 空状態 ─────────────────────────── */
 .empty{padding:34px 26px;text-align:center}
+/* 空状態の案内は、余った縦を全部もらって中央に置く。
+   日報タブは .tab の直下、他の3タブはリストの器ごしに効かせる
+   （器に is-empty が付くのは、中身が案内文だけのときに限る）。
+   中身があるときは器に一切触らないので、行の並びは変わらない */
+#route-empty,#dest-list.is-empty,#course-list.is-empty,#hist-list.is-empty{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+}
+/* display を指定した以上、[hidden] を効かせ直す必要がある */
+#route-empty[hidden]{display:none}
 .empty-title{margin:0 0 6px;font-weight:700}
 .empty-sub{margin:0;font-size:14px;color:var(--muted);line-height:1.7}
 

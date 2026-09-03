@@ -541,11 +541,23 @@ function undoApply() {
   save(); renderToday(); toast('元に戻しました');
 }
 
+/* 中身が空状態の案内文だけなら、器に is-empty を付ける。
+   styles.css がそれを見て、余った縦をもらって案内を中央に置く。
+   付けないと案内が画面の上に貼り付き、下に数百pxの空白が残る。
+   中身があるときは何も足さないので、行の並びは変わらない。
+   innerHTML を入れ替えたあとに必ず呼ぶこと。 */
+function markEmpty(sel) {
+  var el = $(sel);
+  var only = el.children.length === 1 && el.firstElementChild.className === 'empty';
+  el.classList.toggle('is-empty', only);
+}
+
 function renderCourseList() {
   if (!DB.courses.length) {
     $('#course-list').innerHTML = '<div class="empty"><p class="empty-title">コースがまだありません</p>' +
       '<p class="empty-sub">いつも同じ順番で回る先をまとめて登録しておくと、ボタン1つで日報に並びます。' +
       'Googleマップで組んだルートのURLも一緒に登録できます。</p></div>';
+    markEmpty('#course-list');
     return;
   }
   // 見た目は配送先タブの行をそのまま流用する（.dest-row / .dest-main / .dest-actions）
@@ -573,6 +585,7 @@ function renderCourseList() {
       '</div>' +
       '</div>';
   }).join('') + '</div>';
+  markEmpty('#course-list');
 }
 
 function openCourseEditor(cid) {
@@ -637,6 +650,7 @@ function renderDest() {
       '<p class="empty-sub">下のボタンから登録します。一度入れておけば、次からは選ぶだけで日報に載ります。</p></div>';
   }
   $('#dest-list').innerHTML = html;
+  markEmpty('#dest-list');
 
   var arch = DB.destinations.filter(function (d) { return d.archived; });
   $('#archive-box').hidden = arch.length === 0;
@@ -660,6 +674,7 @@ function renderHist() {
   if (!rows.length) {
     $('#hist-list').innerHTML = '<div class="empty"><p class="empty-title">履歴はまだありません</p>' +
       '<p class="empty-sub">日報を1件でも記録すると、ここに日付が並びます。</p></div>';
+    markEmpty('#hist-list');
     return;
   }
 
@@ -692,6 +707,7 @@ function renderHist() {
         '<span class="hist-n">' + stp.length + '件</span></button>';
     }).join('');
   }).join('');
+  markEmpty('#hist-list');
 }
 
 function render() {
