@@ -486,7 +486,7 @@ function renderToday() {
     });
     if (st.note) tags.push('<span class="tag tag-note">' + esc(st.note) + '</span>');
     if (dd) tags.push('<span class="tag">' + esc(catName(dd.catId)) + '</span>');
-    return '<li class="stop' + (up ? ' is-transfer' : '') + '">' +
+    return '<li class="stop' + (up ? ' is-transfer' : '') + '" data-menu="' + st.id + '">' +
       '<div class="stop-gutter"><span class="stop-grip" data-drag="route"><span class="stop-no">' + pad(i + 1) + '</span></span></div>' +
       '<div class="stop-body"><div class="stop-name">' + esc(destName(st.destId)) + '</div>' +
       (tags.length ? '<div class="stop-meta">' + tags.join('') + '</div>' : '') + '</div>' +
@@ -1453,12 +1453,24 @@ function dragEnd(commit) {
   drag = null;
   cancelAnimationFrame(d.raf);
   document.body.classList.remove('is-dragging');
+  if (d.moved) dragClickUntil = Date.now() + 1000;
   if (commit && d.to !== d.from) { d.cfg.drop(d.from, d.to); return; }
   d.row.classList.remove('is-lifted');
   d.rows.forEach(function (r) { r.style.transform = ''; });
 }
 
+/* 行はどこを押してもメニューが開くので、ドラッグを離した直後の click は捨てる。
+   iOS はドラッグのあとに click を出さないので、次に押したときか1秒で解く */
+var dragClickUntil = 0;
+document.addEventListener('click', function (e) {
+  if (Date.now() >= dragClickUntil) return;
+  dragClickUntil = 0;
+  e.preventDefault();
+  e.stopPropagation();
+}, true);
+
 document.addEventListener('pointerdown', function (e) {
+  dragClickUntil = 0;
   var h = (!drag && e.isPrimary && e.button === 0 && e.target.closest) ? e.target.closest('[data-drag]') : null;
   if (!h) return;
   e.preventDefault();   // マウスで押したときに文字が選択されないように

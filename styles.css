@@ -196,6 +196,9 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   border-top:1px solid var(--rule);
 }
 .route .stop:last-child{border-bottom:1px solid var(--rule)}
+/* 行のどこを押してもメニューが開く */
+.stop{cursor:pointer}
+.stop:active:not(.is-lifted){background:var(--surface-2)}
 
 /* 縦の背骨 */
 .stop-gutter{position:relative}
