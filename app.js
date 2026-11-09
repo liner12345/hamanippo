@@ -179,6 +179,15 @@ function esc(s) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
   });
 }
+/* 検索で比べる前に、全角／半角・大文字／小文字・ひらがな／カタカナの違いを畳む。
+   問い合わせと探される側の両方に同じものを通すこと */
+function foldText(s) {
+  s = String(s);
+  if (s.normalize) s = s.normalize('NFKC');
+  return s.toLowerCase().replace(/[\u3041-\u3096]/g, function (c) {
+    return String.fromCharCode(c.charCodeAt(0) + 0x60);
+  });
+}
 var WD = ['日', '月', '火', '水', '木', '金', '土'];
 function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function parseKey(k) { var a = k.split('-'); return new Date(+a[0], +a[1] - 1, +a[2]); }
@@ -876,11 +885,11 @@ function renderPickCats() {
 }
 
 function renderPickList() {
-  var q = $('#pick-search').value.trim().toLowerCase();
+  var q = foldText($('#pick-search').value).trim();
   var pool = DB.destinations.filter(function (d) {
     if (d.archived) return false;
     if (S.pickCat && d.catId !== S.pickCat) return false;
-    if (q && (d.name + ' ' + (d.memo || '') + ' ' + (d.address || '')).toLowerCase().indexOf(q) < 0) return false;
+    if (q && foldText(d.name + ' ' + (d.memo || '') + ' ' + (d.address || '')).indexOf(q) < 0) return false;
     return true;
   });
 
