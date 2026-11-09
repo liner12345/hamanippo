@@ -235,6 +235,7 @@ var S = {
   date: keyOf(new Date()),
   page: 0,
   pickFrom: null,
+  pickChain: false,   // 選択画面の「転送」から届け先を選んでいる。選んだら選択画面に戻る
   pickMode: 'day',
   pickCat: '',
   course: null,
@@ -564,6 +565,7 @@ function undoApply() {
     }
   }
   save(); renderToday(); toast('元に戻しました');
+  if (openId === 'sh-pick') paintPickCounts();
 }
 
 /* 中身が空状態の案内文だけなら、器に is-empty を付ける。
@@ -801,6 +803,7 @@ function toast(msg, actLabel, fn) {
 function openPicker(fromStopId, mode) {
   S.pickMode = mode || 'day';
   S.pickFrom = fromStopId || null;
+  S.pickChain = false;
   S.pickCat = '';
   $('#pick-search').value = '';
   var hint = $('#pick-hint');
@@ -824,7 +827,22 @@ function openPicker(fromStopId, mode) {
 function addToCourse(destId) {
   S.course.items.push(destId);
   renderCourseItems();
+  paintPickCounts();
   toast(destName(destId) + ' を追加（計' + S.course.items.length + '件）');
+}
+
+/* 選択画面の各行に、いまのページ（コースなら編集中のコース）に入っている回数を出す。
+   足すたびに一覧を作り直すと「よく使う」の並びが入れ替わるので、印だけを書き換える */
+function paintPickCounts() {
+  var ids = S.pickMode === 'course' ? S.course.items : curStops().map(function (x) { return x.destId; });
+  var n = {};
+  ids.forEach(function (id) { n[id] = (n[id] || 0) + 1; });
+  Array.prototype.forEach.call(document.querySelectorAll('#pick-list [data-pick]'), function (b) {
+    var c = n[b.dataset.pick] || 0, m = b.querySelector('.pick-n');
+    m.hidden = !c;
+    m.textContent = '✓ ' + c;
+    b.parentNode.classList.toggle('is-in', c > 0);
+  });
 }
 
 function renderPickCats() {
@@ -860,8 +878,11 @@ function renderPickList() {
     if (d.memo) subItems.push(esc(d.memo));
     return '<div class="pick-item' + (S.pickMode === 'course' ? ' solo' : '') + '">' +
       '<button class="pick-row" data-pick="' + d.id + '">' +
-        '<div class="pick-name">' + esc(d.name) + '</div>' +
-        '<div class="pick-sub">' + subItems.join(' ・ ') + '</div>' +
+        '<div class="pick-text">' +
+          '<div class="pick-name">' + esc(d.name) + '</div>' +
+          '<div class="pick-sub">' + subItems.join(' ・ ') + '</div>' +
+        '</div>' +
+        '<span class="pick-n" hidden></span>' +
       '</button>' +
       (S.pickMode === 'course' ? '' :
         '<button class="pick-tf" data-picktf="' + d.id + '" aria-label="' + esc(d.name) + 'で転送を引き取った">' +
@@ -885,24 +906,30 @@ function renderPickList() {
     html = '<div class="pick-group">' + pool.map(row).join('') + '</div>';
   }
   $('#pick-list').innerHTML = html;
+  paintPickCounts();
 }
 
+/* 足しても選択画面は閉じない（SM-3b）。続けて足せる。
+   転送の届け先を選んだときは、来た所へ戻る。行のメニューからなら閉じ、選択画面の「転送」からなら選択画面へ */
 function addStop(destId, thenTransfer) {
   var st = { id: uid('s-'), destId: destId, from: S.pickFrom || null, note: '' };
   curStops().push(st);
   var d = destOf(destId); if (d) d.uses = (d.uses || 0) + 1;
-  var wasDrop = !!S.pickFrom;
+  var wasDrop = !!S.pickFrom, chain = S.pickChain;
   S.pickFrom = null;
   save();
+  if (S.tab !== 'today') setTab('today'); else renderToday();
 
   if (thenTransfer) {
-    if (S.tab !== 'today') setTab('today'); else renderToday();
     openPicker(st.id);
+    S.pickChain = true;
     return;
   }
-  closeSheet();
-  if (S.tab !== 'today') setTab('today'); else renderToday();
-  toast(destName(destId) + (wasDrop ? ' を届け先として追加' : ' を追加'));
+  if (wasDrop && !chain) closeSheet();
+  else if (wasDrop) openPicker(null);
+  else if (openId !== 'sh-pick') { openSheet('sh-pick'); renderPickCats(); renderPickList(); }
+  else paintPickCounts();
+  toast(destName(destId) + (wasDrop ? ' を届け先として追加' : ' を追加（計' + curStops().length + '件）'));
 }
 
 /* ══════════════════════════════════════

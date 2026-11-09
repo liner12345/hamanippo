@@ -527,11 +527,21 @@ body.is-dragging .is-lifted{transition:none}
   border-radius:10px;margin-bottom:7px;overflow:hidden;
 }
 .pick-row{
-  display:block;width:100%;min-width:0;text-align:left;background:none;
+  display:flex;align-items:center;gap:8px;
+  width:100%;min-width:0;text-align:left;background:none;
   padding:12px 12px 12px 14px;min-height:var(--tap);
   overflow:hidden;
 }
 .pick-row:active{background:var(--surface-2)}
+.pick-text{flex:1;min-width:0}
+/* いまのページ（コースなら編集中のコース）に入っている回数。足した直後にここが増える */
+.pick-n{
+  flex:none;padding:4px 9px;border-radius:999px;
+  font-family:var(--mono);font-size:13px;font-weight:700;line-height:1.2;
+  background:var(--hi);color:var(--hi-ink);
+}
+.pick-n[hidden]{display:none}
+.pick-item.is-in{border-color:var(--hi)}
 .pick-tf{
   width:66px;flex:none;
   display:grid;place-content:center;justify-items:center;gap:3px;
