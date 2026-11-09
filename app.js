@@ -892,6 +892,15 @@ function fillCatSelect(selected) {
   catPrev = $('#dest-cat').value;
 }
 
+/* 新しい配送先のカテゴリの初期値。先頭の「未分類」にすると、選び忘れた配送先が
+   キットで取引先への請求から外れるので、いま使っているカテゴリを選んでおく。
+   ピッカーで絞り込んでいればそのカテゴリ、無ければ最後に登録した配送先のカテゴリ。 */
+function newDestCat() {
+  if (S.pickReturn && catOf(S.pickCat)) return S.pickCat;
+  var last = DB.destinations[DB.destinations.length - 1];
+  return last ? last.catId : DB.categories[0].id;
+}
+
 function openDestEditor(id) {
   S.editDest = id || null;
   var d = id ? destOf(id) : null;
@@ -899,7 +908,7 @@ function openDestEditor(id) {
   $('#dest-name').value = d ? d.name : '';
   $('#dest-addr').value = d ? (d.address || '') : '';
   $('#dest-memo').value = d ? (d.memo || '') : '';
-  fillCatSelect(d ? d.catId : DB.categories[0].id);
+  fillCatSelect(d ? d.catId : newDestCat());
   $('#dest-del').hidden = !d;
   openSheet('sh-dest');
   if (!d) setTimeout(function () { $('#dest-name').focus(); }, 120);
