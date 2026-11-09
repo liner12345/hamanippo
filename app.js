@@ -226,12 +226,9 @@ function pageIdx(k) {
 function curPage() { return pagesOf(S.date)[pageIdx(S.date)]; }
 function curStops() { return curPage().stops; }
 function pageLabel(g, i) { return g.name || ('ページ' + (i + 1)); }
-/* 開き直したときにページ1へ戻すと、2便目の行が1便目に入るため（SM-3c） */
-function lastFilledPage(k) {
-  var ps = pagesOf(k);
-  for (var i = ps.length - 1; i > 0; i--) if (ps[i].stops.length) return i;
-  return 0;
-}
+/* 日付を開くときは最後のページを選ぶ。ページ1へ戻すと、2便目の行が1便目に入るため（SM-3c）。
+   空でも最後にするのは、「＋ ページ」で次の便を始めた直後に開き直すことがあるため */
+function lastPage(k) { return pagesOf(k).length - 1; }
 
 var S = {
   tab: 'today',
@@ -1234,7 +1231,7 @@ $('#scrim').addEventListener('click', closeSheet);
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openId) closeSheet(); });
 
 /* 日付 */
-function goDate(k) { S.date = k; S.page = 0; renderToday(); }
+function goDate(k) { S.date = k; S.page = lastPage(k); renderToday(); }
 $('#d-prev').addEventListener('click', function () { goDate(shiftDate(S.date, -1)); });
 $('#d-next').addEventListener('click', function () { goDate(shiftDate(S.date, 1)); });
 $('#d-today').addEventListener('click', function () { goDate(keyOf(new Date())); });
@@ -1253,7 +1250,7 @@ function followToday() {
   backTo = null;
   if (openId) closeSheet();
   S.date = today;
-  S.page = lastFilledPage(today);
+  S.page = lastPage(today);
   render();
 }
 document.addEventListener('visibilitychange', function () { if (!document.hidden) followToday(); });
@@ -1505,7 +1502,7 @@ $('#cat-new').addEventListener('keydown', function (e) { if (e.key === 'Enter') 
 /* ══════════════════════════════════════
    12. 起動
    ══════════════════════════════════════ */
-S.page = lastFilledPage(S.date);
+S.page = lastPage(S.date);
 setTab('today');
 backupReminder();
 if (movedCorrupt) {
