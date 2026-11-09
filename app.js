@@ -1225,10 +1225,6 @@ $('#dest-save').addEventListener('click', saveDest);
 $('#dest-name').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
 $('#dest-addr').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
 $('#dest-memo').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
-$('#stop-map').addEventListener('click', function () {
-  var addr = this.dataset.map;
-  if (addr) openMap(addr);
-});
 $('#dest-cat').addEventListener('change', function () {
   if (this.value !== '__new') return;
   var name = prompt('新しいカテゴリ名');
