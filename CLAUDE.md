@@ -38,7 +38,9 @@ AGENTS.md の指示にすべて従う。ここに書くのは AGENTS.md に無�
 - 動的に描画したボタンのクリックは、§11 冒頭の document 委譲ハンドラ（`closest('[data-tab],[data-menu],…')`）で受ける。新しい `data-xxx` を足すときは (1) セレクタ一覧への追加 (2) 分岐の追加 の2箇所が必要。片方だけだと反応しない（過去にクリアボタンで発生）。静的な要素は `$('#id').addEventListener` で直接。
 - `data-page="0"` のように 0 や空文字を取り得る値は `!= null` / `hasAttribute()` で判定する。真偽値判定だと落ちる。
 - DB を変えたら `save()` → 再描画（`renderToday()` / `render()`）の順。
-- 破壊的操作は `confirm()`、結果通知は `toast()`。取り消し可能にするときは `undoSnapshot` + `toast(msg, '取り消す', undoApply)` の既存パターン。
+- 破壊的操作は `confirm()`、結果通知は `toast()`。取り消し可能にするときは `undoSnapshot = snapPage(g)` + `toast(msg, '取り消す', undoApply)` の既存パターン（行の追加・削除・並べ替えはこちらで、確かめない）。`snapPage()` は行を中身ごと写す。`stops.slice()` で写すと、取り消す前に書き換えた `from` や `note` が戻らない。
+- 入力欄のあるシートを足すときは、`FORM_SIG` にその値の組を足し、開く関数で `markClean(id)` を呼ぶ（閉じる前の確認・SM-3b）。`openSheet()` の中で取らない（`backTo` で戻ったときに取り直してしまう）。
+- 並べ替えられる一覧を足すときは、`SORT` に一覧を足し、つまみに `data-drag` を付ける（SM-3d）。`touch-action:none` はつまみだけに付ける。行全体に付けると縦にスクロールできなくなる。
 - シートは `openSheet(id, backTo)` / `closeSheet()`。同時に開くのは1枚。`index.html` の `.sheet` 構造（grip / head / body / foot）を踏襲する。
 - タブは 日報 / 配送先 / コース / 履歴 の4つ。`setTab()` の `hidden` 切替・`#btn-add` のラベル・`render()` の3箇所を揃える。
 - `report(k)` は get-or-create。`DB.reports[k]` が存在しても「記録がある」とは限らない（履歴タブは stops が空のページを出さない）。
