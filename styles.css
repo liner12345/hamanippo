@@ -169,14 +169,11 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 
 /* ── セクション見出し ───────────────── */
 .route-head,.pane-head{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;justify-content:flex-end;
   padding:16px 18px 8px;
 }
 .route-head{padding-top:8px;padding-bottom:4px;min-height:52px}
-.eyebrow{
-  font-family:var(--mono);font-size:11px;font-weight:600;
-  letter-spacing:.18em;color:var(--muted);
-}
+#course-list{padding-top:16px}
 .route-head-right{display:flex;align-items:center;gap:10px}
 .txt-btn{min-height:44px;display:inline-flex;align-items:center;padding:0 6px;font-size:15px;font-weight:600;color:var(--muted)}
 .count{font-family:var(--mono);font-size:12px;color:var(--muted)}
