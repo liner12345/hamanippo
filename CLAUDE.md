@@ -46,6 +46,7 @@ AGENTS.md の指示にすべて従う。ここに書くのは AGENTS.md に無�
 ## データの不変条件（壊すと利用者のデータが消える）
 
 - localStorage のキー `nippou.v1` は変えない。データは必ずこの1キーの中に置く。別キーを増やすとバックアップに含まれない。
+  例外は `nippou.v1.corrupt` だけ。起動時に `nippou.v1` を読めなかったとき、空のデータで上書きする前に生の文字列をここへ移す（`loadDB()`）。アプリはこのキーを読まない。
 - バックアップ JSON は `DB` そのもの。読み込み時は `obj.destinations` の有無で判定してから `migrate()` に通す。
 - スキーマを変えるときは `freshDB().v` を上げ、`migrate()` に `if (db.v < N)` ブロックを足す（現在 v6）。
 - ID 接頭辞: `d-` 配送先 / `c-` カテゴリ（既定は固定 `c-base`）/ `k-` コース / `g-` ページ / `s-` 行。
@@ -73,4 +74,4 @@ AGENTS.md の指示にすべて従う。ここに書くのは AGENTS.md に無�
 - package.json / npm / bundler / TypeScript / フレームワーク / テストランナーの導入
 - `<script type="module">` 化（`file://` で CORS に引っかかる）
 - 外部 CDN の読み込み（オフラインで壊れる）
-- `nippou.v1` 以外のストレージ、Cookie、外部送信
+- `nippou.v1` 以外のストレージ（壊れたデータの退避先 `nippou.v1.corrupt` を除く）、Cookie、外部送信

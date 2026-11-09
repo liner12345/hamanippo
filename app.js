@@ -7,16 +7,33 @@ function uid(p) { return p + Date.now().toString(36) + Math.random().toString(36
    1. 保存まわり
    ══════════════════════════════════════ */
 var KEY = 'nippou.v1';
+var CORRUPT_KEY = 'nippou.v1.corrupt';
 var memoryOnly = false;
 var memory = null;
+var movedCorrupt = false;
 
 try { localStorage.setItem('__probe', '1'); localStorage.removeItem('__probe'); }
 catch (e) { memoryOnly = true; }
 
+/* 読めない保存データは、起動時の save() が空のデータで上書きする前に CORRUPT_KEY へ移す。
+   移す空きが無いときは消してよいか聞き、断られたら保存せずに動いて壊れたデータを残す。 */
 function loadDB() {
   if (memoryOnly) return memory;
-  try { var raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; }
-  catch (e) { return null; }
+  var raw;
+  try { raw = localStorage.getItem(KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  try {
+    var db = JSON.parse(raw);
+    if (db && typeof db === 'object' && !Array.isArray(db)) return db;
+  } catch (e) {}
+  try { localStorage.setItem(CORRUPT_KEY, raw); movedCorrupt = true; }
+  catch (e) {
+    if (!confirm('保存されていた記録が壊れていて読み込めません。端末の空き容量が足りず、壊れたデータを別の場所へ移すこともできませんでした。\n\n' +
+                 'OK：壊れたデータを消して新しく始める\nキャンセル：壊れたデータを残す（今回入れた記録は保存されません）')) {
+      memoryOnly = true;
+    }
+  }
+  return null;
 }
 function save() {
   memory = DB;
@@ -1491,6 +1508,11 @@ $('#cat-new').addEventListener('keydown', function (e) { if (e.key === 'Enter') 
 S.page = lastFilledPage(S.date);
 setTab('today');
 backupReminder();
+if (movedCorrupt) {
+  alert('保存されていた記録が壊れていて読み込めませんでした。\n' +
+        '壊れたデータは消さずに端末内の別の場所へ移し、新しく始めます。\n' +
+        'バックアップを書き出していれば、設定の「バックアップを読み込む」から戻せます。');
+}
 
 /* ピンチズームやダブルタップ拡大などのジェスチャを抑止 */
 document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
