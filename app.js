@@ -883,11 +883,13 @@ function addStop(destId, thenTransfer) {
 /* ══════════════════════════════════════
    7. 配送先の登録・編集
    ══════════════════════════════════════ */
+var catPrev = '';   // 「＋ 新しいカテゴリを作る…」を取り消したときに戻す先
 function fillCatSelect(selected) {
   $('#dest-cat').innerHTML = DB.categories.map(function (c) {
     return '<option value="' + c.id + '">' + esc(c.name) + '</option>';
   }).join('') + '<option value="__new">＋ 新しいカテゴリを作る…</option>';
   $('#dest-cat').value = selected || DB.categories[0].id;
+  catPrev = $('#dest-cat').value;
 }
 
 function openDestEditor(id) {
@@ -1226,7 +1228,7 @@ $('#dest-name').addEventListener('keydown', function (e) { if (e.key === 'Enter'
 $('#dest-addr').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
 $('#dest-memo').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveDest(); });
 $('#dest-cat').addEventListener('change', function () {
-  if (this.value !== '__new') return;
+  if (this.value !== '__new') { catPrev = this.value; return; }
   var name = prompt('新しいカテゴリ名');
   if (name && name.trim()) {
     var c = { id: uid('c-'), name: name.trim() };
@@ -1234,7 +1236,7 @@ $('#dest-cat').addEventListener('change', function () {
     fillCatSelect(c.id);
     if (S.tab === 'dest') renderDest();
   } else {
-    fillCatSelect(DB.categories[0].id);
+    this.value = catPrev;
   }
 });
 $('#dest-del').addEventListener('click', function () {
