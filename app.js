@@ -468,7 +468,9 @@ function renderToday() {
   $('#d-main').textContent = d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate());
   $('#d-wd').textContent = WD[d.getDay()];
   $('#d-input').value = S.date;
-  $('#d-today').classList.toggle('is-on', S.date === keyOf(new Date()));
+  var isToday = S.date === keyOf(new Date());
+  $('#d-today').classList.toggle('is-on', isToday);
+  $('.datebar').classList.toggle('is-other', !isToday);
 
   renderPageBar();
 

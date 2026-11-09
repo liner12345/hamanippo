@@ -112,6 +112,9 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   border-bottom:1px solid var(--rule);
   position:sticky;top:calc(64px + env(safe-area-inset-top,0px));z-index:15;
 }
+/* 今日以外の日を見ているときは、日付バーの色を変え、「今日」を戻り先として目立たせる（SM-3c） */
+.datebar.is-other{background:color-mix(in srgb,var(--hi) 24%,var(--surface))}
+.datebar.is-other #d-today{background:var(--hi);border-color:var(--hi);color:var(--hi-ink)}
 .datefield{
   position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
   min-height:44px;padding:0 6px;border-radius:10px;
