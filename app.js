@@ -627,6 +627,7 @@ function openCourseEditor(cid) {
   $('#c-map').value = S.course.mapUrl;
   $('#c-del').hidden = !c;
   renderCourseItems();
+  markClean('sh-cedit');
   openSheet('sh-cedit');
 }
 
@@ -786,6 +787,21 @@ function closeSheet() {
   if (back) { openSheet(back); return; }
   $('#scrim').hidden = true;
   document.body.style.overflow = '';
+}
+
+/* 入力途中のシートは、閉じる前に確かめる（SM-3b）。開いたときの値の組と比べる。
+   基準は各エディタを開く関数で取る。openSheet で取ると、コース編集が選択画面から戻ったときに取り直してしまう */
+var FORM_SIG = {
+  'sh-dest': function () { return [$('#dest-name').value, $('#dest-cat').value, $('#dest-addr').value, $('#dest-memo').value].join('\n'); },
+  'sh-cedit': function () { return [$('#c-name').value, $('#c-map').value, S.course.items.join(',')].join('\n'); },
+  'sh-page': function () { return $('#page-name').value; }
+};
+var formBase = {};
+function markClean(id) { formBase[id] = FORM_SIG[id](); }
+function requestClose() {
+  var sig = FORM_SIG[openId];
+  if (sig && sig() !== formBase[openId] && !confirm('入力した内容は保存されていません。閉じますか？')) return;
+  closeSheet();
 }
 
 var toastTimer = null, toastFn = null;
@@ -965,6 +981,7 @@ function openDestEditor(id) {
   $('#dest-memo').value = d ? (d.memo || '') : '';
   fillCatSelect(d ? d.catId : newDestCat());
   $('#dest-del').hidden = !d;
+  markClean('sh-dest');
   openSheet('sh-dest');
   if (!d) setTimeout(function () { $('#dest-name').focus(); }, 120);
 }
@@ -1151,7 +1168,7 @@ document.addEventListener('click', function (ev) {
     return;
   }
 
-  if (t.hasAttribute('data-close')) { closeSheet(); return; }
+  if (t.hasAttribute('data-close')) { requestClose(); return; }
   if (t.dataset.tab) { setTab(t.dataset.tab); return; }
 
   if (t.dataset.menu) {
@@ -1263,11 +1280,11 @@ $('#cat-list').addEventListener('change', function (ev) {
   c.name = v; save(); render();
 });
 
-$('#scrim').addEventListener('click', closeSheet);
+$('#scrim').addEventListener('click', requestClose);
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
   if (drag) { dragEnd(false); return; }
-  if (openId) closeSheet();
+  if (openId) requestClose();
 });
 
 /* 日付 */
@@ -1504,6 +1521,7 @@ function openPageSheet() {
   $('#page-left').disabled = i === 0;
   $('#page-right').disabled = i === ps.length - 1;
   $('#page-del').hidden = ps.length < 2;
+  markClean('sh-page');
   openSheet('sh-page');
 }
 
