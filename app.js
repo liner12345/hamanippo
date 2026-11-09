@@ -209,6 +209,12 @@ function pageIdx(k) {
 function curPage() { return pagesOf(S.date)[pageIdx(S.date)]; }
 function curStops() { return curPage().stops; }
 function pageLabel(g, i) { return g.name || ('ページ' + (i + 1)); }
+/* 開き直したときにページ1へ戻すと、2便目の行が1便目に入るため（SM-3c） */
+function lastFilledPage(k) {
+  var ps = pagesOf(k);
+  for (var i = ps.length - 1; i > 0; i--) if (ps[i].stops.length) return i;
+  return 0;
+}
 
 var S = {
   tab: 'today',
@@ -1463,6 +1469,7 @@ $('#cat-new').addEventListener('keydown', function (e) { if (e.key === 'Enter') 
 /* ══════════════════════════════════════
    12. 起動
    ══════════════════════════════════════ */
+S.page = lastFilledPage(S.date);
 setTab('today');
 backupReminder();
 
