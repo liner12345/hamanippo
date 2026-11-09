@@ -145,7 +145,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   display:inline-flex;align-items:center;gap:7px;
 }
 .chip-n{
-  font-family:var(--mono);font-size:11px;font-weight:700;
+  font-family:var(--mono);font-size:13px;font-weight:700;
   background:var(--hi);color:#131820;border-radius:999px;padding:2px 6px;line-height:1;
 }
 .chip-ghost{color:var(--muted);border-style:dashed}
@@ -176,7 +176,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 #course-list{padding-top:16px}
 .route-head-right{display:flex;align-items:center;gap:10px}
 .txt-btn{min-height:44px;display:inline-flex;align-items:center;padding:0 6px;font-size:15px;font-weight:600;color:var(--muted)}
-.count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.count{font-family:var(--mono);font-size:13px;color:var(--muted)}
 .txt-btn.danger{color:var(--danger)}
 .txt-btn.sm{
   min-height:44px;display:inline-flex;align-items:center;
@@ -221,7 +221,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   width:26px;height:26px;
   display:grid;place-items:center;border-radius:50%;
   background:var(--ink);color:var(--surface);
-  font-family:var(--mono);font-size:11px;font-weight:700;
+  font-family:var(--mono);font-size:13px;font-weight:700;
 }
 
 .stop-body{padding:12px 4px 14px 0;min-width:0}
@@ -231,7 +231,7 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 }
 .stop-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
 .tag{
-  font-size:11.5px;font-weight:600;line-height:1;
+  font-size:13px;font-weight:600;line-height:1;
   padding:5px 8px;border-radius:5px;
   background:var(--surface-2);color:var(--muted);
 }
@@ -285,7 +285,7 @@ body.is-dragging .is-lifted{transition:none}
   font-size:14px;font-weight:600;color:var(--muted);white-space:nowrap;
 }
 .page-pill .chip-n{
-  font-family:var(--mono);font-size:11px;font-weight:700;line-height:1;
+  font-family:var(--mono);font-size:13px;font-weight:700;line-height:1;
   background:var(--rule);color:var(--muted);
   border-radius:999px;padding:3px 7px;
 }
@@ -299,7 +299,7 @@ body.is-dragging .is-lifted{transition:none}
    （明るい面には暗い文字、暗い面には明るい文字が自動で当たる） */
 .page-pill.is-on .chip-n{background:var(--transfer);color:var(--surface)}
 .page-more{
-  width:42px;min-height:46px;display:grid;place-items:center;
+  width:44px;min-height:46px;display:grid;place-items:center;
   border-left:1px solid var(--rule);color:var(--muted);
 }
 .page-more:active{background:var(--surface-2)}
@@ -312,7 +312,7 @@ body.is-dragging .is-lifted{transition:none}
 /* ── コース（灰色の面に置いて、ページと明確に分ける） ── */
 .hist-page{
   display:inline-block;margin-left:8px;padding:2px 7px;border-radius:5px;
-  font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:0;
+  font-family:var(--sans);font-size:13px;font-weight:700;letter-spacing:0;
   background:color-mix(in srgb,var(--transfer) 15%,transparent);color:var(--transfer);
   vertical-align:2px;
 }
@@ -347,9 +347,9 @@ body.is-dragging .is-lifted{transition:none}
 .cat-block .dest-row:last-child{border-bottom:1px solid var(--rule)}
 .dest-main{padding:10px 2px 10px 18px;text-align:left;min-width:0}
 .dest-name{font-size:16px;font-weight:600;word-break:break-word}
-.dest-memo{font-size:12.5px;color:var(--muted);margin-top:2px;word-break:break-word}
+.dest-memo{font-size:13px;color:var(--muted);margin-top:2px;word-break:break-word}
 .dest-addr{
-  font-size:12px;color:var(--muted);margin-top:3px;
+  font-size:13px;color:var(--muted);margin-top:3px;
   display:flex;align-items:center;gap:4px;word-break:break-word;
 }
 .dest-addr svg{width:14px;height:14px;flex:none;opacity:.8}
@@ -397,7 +397,7 @@ body.is-dragging .is-lifted{transition:none}
 }
 .hist-date{font-family:var(--mono)}
 .hist-sub{
-  font-size:12.5px;color:var(--muted);margin-top:3px;
+  font-size:13px;color:var(--muted);margin-top:3px;
   display:flex;align-items:center;gap:6px;width:100%;
   overflow:hidden;
 }
@@ -407,10 +407,10 @@ body.is-dragging .is-lifted{transition:none}
 }
 .hist-sub-more{
   flex:none;
-  white-space:nowrap;font-weight:600;font-size:12px;color:var(--muted);
+  white-space:nowrap;font-weight:600;font-size:13px;color:var(--muted);
 }
 .hist-n{
-  flex:none;font-family:var(--mono);font-size:12px;
+  flex:none;font-family:var(--mono);font-size:13px;
   color:var(--muted);white-space:nowrap;
 }
 
@@ -465,7 +465,7 @@ body.is-dragging .is-lifted{transition:none}
 }
 .tabbtn{
   min-height:64px;display:grid;place-items:center;gap:3px;
-  color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.02em;
+  color:var(--muted);font-size:13px;font-weight:700;letter-spacing:.02em;
 }
 .tabbtn svg{width:23px;height:23px}
 .tabbtn.is-on{color:var(--ink)}
@@ -521,7 +521,7 @@ body.is-dragging .is-lifted{transition:none}
 
 .pick-group{margin-bottom:14px}
 .pick-label{
-  font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  font-family:var(--mono);font-size:13px;letter-spacing:.14em;
   color:var(--muted);padding:8px 2px 6px;
 }
 .pick-item{
@@ -549,7 +549,7 @@ body.is-dragging .is-lifted{transition:none}
   width:66px;flex:none;
   display:grid;place-content:center;justify-items:center;gap:3px;
   border-left:1px solid var(--rule);
-  color:var(--transfer);font-size:10.5px;font-weight:700;letter-spacing:.02em;
+  color:var(--transfer);font-size:13px;font-weight:700;letter-spacing:.02em;
 }
 .pick-tf svg{width:19px;height:19px;stroke-width:2}
 .pick-tf:active{background:color-mix(in srgb,var(--transfer) 12%,transparent)}
@@ -564,7 +564,7 @@ body.is-dragging .is-lifted{transition:none}
   overflow:hidden;
 }
 .pick-sub{
-  font-size:12px;color:var(--muted);margin-top:2px;
+  font-size:13px;color:var(--muted);margin-top:2px;
   word-break:break-word;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-box-orient:vertical;
   -webkit-line-clamp:2;line-clamp:2;
@@ -578,7 +578,7 @@ body.is-dragging .is-lifted{transition:none}
   display:flex;align-items:center;gap:8px;
   font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;
 }
-.opt{font-weight:600;font-size:11px;padding:2px 6px;border-radius:4px;background:var(--surface-2)}
+.opt{font-weight:600;font-size:13px;padding:2px 6px;border-radius:4px;background:var(--surface-2)}
 .field input,.field select,.inline-add input{
   width:100%;min-height:var(--tap);padding:0 14px;
   border:1.5px solid var(--rule);border-radius:var(--r);
@@ -605,7 +605,7 @@ body.is-dragging .is-lifted{transition:none}
 }
 .switch input{width:24px;height:24px;flex:none;margin:1px 0 0;accent-color:var(--transfer)}
 .switch strong{display:block;font-size:15px}
-.switch small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
+.switch small{display:block;font-size:13px;color:var(--muted);margin-top:2px;line-height:1.5}
 
 .menu{display:flex;flex-direction:column;gap:8px}
 .menu-item{
@@ -614,7 +614,7 @@ body.is-dragging .is-lifted{transition:none}
   font-size:15px;font-weight:600;
 }
 .menu-item:active{background:var(--surface-2)}
-.menu-item small{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.5}
+.menu-item small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:3px;line-height:1.5}
 .menu-item.accent{border-color:var(--transfer);color:var(--transfer)}
 .menu-item.accent small{color:var(--transfer);opacity:.8}
 .menu-item.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,transparent)}
@@ -652,7 +652,7 @@ body.is-dragging .is-lifted{transition:none}
 .cno{
   width:44px;height:44px;display:grid;place-items:center;border-radius:8px;
   background:var(--surface-2);
-  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--muted);
+  font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);
   touch-action:none;cursor:grab;
   -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
 }
@@ -677,11 +677,11 @@ body.is-dragging .is-lifted{transition:none}
 .tags p{margin:0 0 10px;line-height:1.65}
 .tags dl{margin:0 0 8px;display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:baseline}
 .tags dt{
-  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink);
+  font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);
   background:var(--surface-2);border-radius:5px;padding:3px 6px;white-space:nowrap;
 }
 .tags dd{margin:0;line-height:1.6}
-.tags-note{font-size:12px;padding-bottom:12px}
+.tags-note{font-size:13px;padding-bottom:12px}
 
 /* ── 出力プレビュー ─────────────────── */
 .out{
@@ -691,7 +691,7 @@ body.is-dragging .is-lifted{transition:none}
   white-space:pre-wrap;word-break:break-word;
 }
 .rule{border:0;border-top:1px solid var(--rule);margin:20px 0 16px}
-.note{font-size:12.5px;color:var(--muted);line-height:1.7;margin:0 0 14px;white-space:pre-line}
+.note{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 14px;white-space:pre-line}
 
 /* ── トースト ───────────────────────── */
 /* 「取り消す」に片手で届くよう、画面の下（操作バーのすぐ上）に出す。
