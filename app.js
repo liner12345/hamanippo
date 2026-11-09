@@ -531,7 +531,7 @@ function applyCourse(cid) {
   var c = courseOf(cid);
   if (!c || !c.items.length) { toast('このコースには配送先が入っていません'); return false; }
   var g = curPage();
-  undoSnapshot = { date: S.date, pageId: g.id, name: g.name, stops: g.stops.slice() };
+  undoSnapshot = snapPage(g);
 
   // 空で名前の無いページに入れるときは、コース名をページ名にする
   if (!g.stops.length && !g.name) g.name = c.name;
@@ -913,6 +913,7 @@ function renderPickList() {
    転送の届け先を選んだときは、来た所へ戻る。行のメニューからなら閉じ、選択画面の「転送」からなら選択画面へ */
 function addStop(destId, thenTransfer) {
   var st = { id: uid('s-'), destId: destId, from: S.pickFrom || null, note: '' };
+  undoSnapshot = snapPage(curPage());
   curStops().push(st);
   var d = destOf(destId); if (d) d.uses = (d.uses || 0) + 1;
   var wasDrop = !!S.pickFrom, chain = S.pickChain;
@@ -929,7 +930,7 @@ function addStop(destId, thenTransfer) {
   else if (wasDrop) openPicker(null);
   else if (openId !== 'sh-pick') { openSheet('sh-pick'); renderPickCats(); renderPickList(); }
   else paintPickCounts();
-  toast(destName(destId) + (wasDrop ? ' を届け先として追加' : ' を追加（計' + curStops().length + '件）'));
+  toast(destName(destId) + (wasDrop ? ' を届け先として追加' : ' を追加（計' + curStops().length + '件）'), '取り消す', undoApply);
 }
 
 /* ══════════════════════════════════════
@@ -1141,7 +1142,7 @@ document.addEventListener('click', function (ev) {
     var ps = pagesOf(S.date);
     var who = ps.length > 1 ? fmtDate(S.date, 'md') + ' の' + pageLabel(gc, pageIdx(S.date)) : fmtDate(S.date, 'md');
     if (!confirm(who + ' の記録（' + gc.stops.length + '件）をすべて消去しますか？')) return;
-    undoSnapshot = { date: S.date, pageId: gc.id, name: gc.name, stops: gc.stops.slice() };
+    undoSnapshot = snapPage(gc);
     gc.stops = [];
     save(); renderToday();
     toast('すべての記録をクリアしました', '取り消す', undoApply);
@@ -1213,12 +1214,13 @@ document.addEventListener('click', function (ev) {
     S.pickFrom = null;
     var d0 = destOf(t.dataset.quick);
     var g0 = curPage();
+    undoSnapshot = snapPage(g0);
     g0.stops.push({ id: uid('s-'), destId: d0.id, from: null, note: '' });
     d0.uses = (d0.uses || 0) + 1;
     save();
     var ps0 = pagesOf(S.date);
     toast(d0.name + ' を ' + fmtDate(S.date, 'md') +
-      (ps0.length > 1 ? ' の' + pageLabel(g0, pageIdx(S.date)) : '') + ' に追加');
+      (ps0.length > 1 ? ' の' + pageLabel(g0, pageIdx(S.date)) : '') + ' に追加', '取り消す', undoApply);
     return;
   }
 
@@ -1352,17 +1354,18 @@ $('#stop-transfer').addEventListener('click', function () {
 });
 $('#stop-up').addEventListener('click', function () { moveStop(-1); });
 $('#stop-down').addEventListener('click', function () { moveStop(1); });
+/* 確かめずに消し、トーストの「取り消す」で戻せるようにする。
+   ここから転送した行は、通常の配送として残す（from を外す） */
 $('#stop-del').addEventListener('click', function () {
   var g = curPage();
   var st = currentStop(); if (!st) return;
   var kids = dropsOf(st, g.stops);
-  var msg = kids.length
-    ? 'この行を削除します。ここから転送した' + kids.length + '件は、通常の配送として残ります。'
-    : 'この行を削除します。';
-  if (!confirm(msg)) return;
+  undoSnapshot = snapPage(g);
   kids.forEach(function (x) { x.from = null; });
   g.stops = g.stops.filter(function (x) { return x.id !== S.stopId; });
-  save(); closeSheet(); renderToday(); toast('削除しました');
+  save(); closeSheet(); renderToday();
+  toast(destName(st.destId) + ' を削除しました' +
+    (kids.length ? '。転送した' + kids.length + '件は通常の配送として残ります' : ''), '取り消す', undoApply);
 });
 
 /* 行の並べ替え（ドラッグ・SM-3d）。drag が null なら待機、値があればドラッグ中。
