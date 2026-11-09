@@ -1223,6 +1223,25 @@ $('#d-next').addEventListener('click', function () { goDate(shiftDate(S.date, 1)
 $('#d-today').addEventListener('click', function () { goDate(keyOf(new Date())); });
 $('#d-input').addEventListener('change', function () { if (this.value) goDate(this.value); });
 
+/* 開いたまま日付が変わったら、画面に戻ったときに今日へ移す（SM-3c）。
+   過去の日を見ていたときは、利用者が選んだ日なので動かさない。
+   開いていたシートは前の日を指しているので閉じる。出力シートのまま送ると、今日の空の日報が出てしまう。 */
+var seenToday = S.date;
+function followToday() {
+  var today = keyOf(new Date());
+  if (today === seenToday) return;
+  var wasToday = S.date === seenToday;
+  seenToday = today;
+  if (!wasToday) return;
+  backTo = null;
+  if (openId) closeSheet();
+  S.date = today;
+  S.page = lastFilledPage(today);
+  render();
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden) followToday(); });
+window.addEventListener('pageshow', followToday);
+
 /* 主要ボタン */
 $('#btn-add').addEventListener('click', function () {
   if (S.tab === 'dest') { S.pickReturn = false; openDestEditor(null); }
