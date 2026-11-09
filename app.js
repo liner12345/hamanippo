@@ -486,7 +486,7 @@ function renderToday() {
     if (st.note) tags.push('<span class="tag tag-note">' + esc(st.note) + '</span>');
     if (dd) tags.push('<span class="tag">' + esc(catName(dd.catId)) + '</span>');
     return '<li class="stop' + (up ? ' is-transfer' : '') + '">' +
-      '<div class="stop-gutter"><span class="stop-no">' + pad(i + 1) + '</span></div>' +
+      '<div class="stop-gutter"><span class="stop-grip" data-drag="route"><span class="stop-no">' + pad(i + 1) + '</span></span></div>' +
       '<div class="stop-body"><div class="stop-name">' + esc(destName(st.destId)) + '</div>' +
       (tags.length ? '<div class="stop-meta">' + tags.join('') + '</div>' : '') + '</div>' +
       '<button class="stop-menu" data-menu="' + st.id + '" aria-label="' + esc(destName(st.destId)) + 'の操作">' + DOTS + '</button>' +
@@ -546,6 +546,11 @@ function applyCourse(cid) {
 }
 
 var undoSnapshot = null;
+/* 取り消し用に、ページの行をその時点の中身ごと写す。
+   行のオブジェクトを共有すると、取り消す前に書き換えた from や note までは戻らない */
+function snapPage(g) {
+  return { date: S.date, pageId: g.id, name: g.name, stops: JSON.parse(JSON.stringify(g.stops)) };
+}
 function undoApply() {
   if (!undoSnapshot) return;
   var u = undoSnapshot; undoSnapshot = null;
@@ -630,7 +635,7 @@ function renderCourseItems() {
   }
   $('#c-items').innerHTML = it.map(function (id, i) {
     return '<div class="citem">' +
-      '<span class="cno">' + pad(i + 1) + '</span>' +
+      '<span class="cno" data-drag="course">' + pad(i + 1) + '</span>' +
       '<span class="cname">' + esc(destName(id)) + '</span>' +
       '<button data-cup="' + i + '" aria-label="上へ"' + (i === 0 ? ' disabled' : '') + '>' + UPIC + '</button>' +
       '<button data-cdn="' + i + '" aria-label="下へ"' + (i === it.length - 1 ? ' disabled' : '') + '>' + DNIC + '</button>' +
@@ -1228,7 +1233,11 @@ $('#cat-list').addEventListener('change', function (ev) {
 });
 
 $('#scrim').addEventListener('click', closeSheet);
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openId) closeSheet(); });
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (drag) { dragEnd(false); return; }
+  if (openId) closeSheet();
+});
 
 /* 日付 */
 function goDate(k) { S.date = k; S.page = lastPage(k); renderToday(); }
@@ -1327,6 +1336,118 @@ $('#stop-del').addEventListener('click', function () {
   kids.forEach(function (x) { x.from = null; });
   g.stops = g.stops.filter(function (x) { return x.id !== S.stopId; });
   save(); closeSheet(); renderToday(); toast('削除しました');
+});
+
+/* 行の並べ替え（ドラッグ・SM-3d）。drag が null なら待機、値があればドラッグ中。
+   ドラッグ中は再描画せず transform で見せ、指を離したときに一度だけ配列を並べ替える。
+   コース編集は保存するまで下書きなので、並べ替えても save() しない（↑↓ と同じ） */
+var SORT = {
+  route: {
+    box: function () { return $('#route'); },
+    scroller: function () { return document.scrollingElement || document.documentElement; },
+    view: function () {
+      return { top: $('.datebar').getBoundingClientRect().bottom, bottom: $('#actionbar').getBoundingClientRect().top };
+    },
+    drop: function (from, to) {
+      var g = curPage();
+      undoSnapshot = snapPage(g);
+      g.stops.splice(to, 0, g.stops.splice(from, 1)[0]);
+      save(); renderToday();
+      toast(destName(g.stops[to].destId) + ' を' + (to + 1) + '番目へ移動', '取り消す', undoApply);
+    }
+  },
+  course: {
+    box: function () { return $('#c-items'); },
+    scroller: function () { return $('#sh-cedit .sheet-body'); },
+    view: function () { return this.scroller().getBoundingClientRect(); },
+    drop: function (from, to) {
+      var it = S.course.items;
+      it.splice(to, 0, it.splice(from, 1)[0]);
+      renderCourseItems();
+    }
+  }
+};
+var drag = null;
+
+function dragStart(e, handle) {
+  var cfg = SORT[handle.dataset.drag];
+  var rows = Array.prototype.slice.call(cfg.box().children);
+  var row = rows.filter(function (r) { return r.contains(handle); })[0];
+  if (!row) return;
+  var rects = rows.map(function (r) { return r.getBoundingClientRect(); });
+  var sc = cfg.scroller();
+  drag = {
+    cfg: cfg, rows: rows, row: row, from: rows.indexOf(row), to: rows.indexOf(row),
+    id: e.pointerId, y0: e.clientY, y: e.clientY, sc: sc, s0: sc.scrollTop,
+    tops: rects.map(function (r) { return r.top; }),
+    hs: rects.map(function (r) { return r.height; }),
+    gap: rects.length > 1 ? rects[1].top - rects[0].bottom : 0,
+    moved: false, raf: 0
+  };
+  try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+  row.classList.add('is-lifted');
+  document.body.classList.add('is-dragging');
+  drag.raf = requestAnimationFrame(dragTick);
+}
+
+/* 位置は押した時点の画面座標で比べる。自動スクロールした分は持ち上げた行の移動量に足す。
+   上の行とは持ち上げた行の上端、下の行とは下端がその行の中央を越えたら入れ替える */
+function dragPaint(d) {
+  var f = d.from, last = d.rows.length - 1;
+  var dy = d.y - d.y0 + (d.sc.scrollTop - d.s0);
+  dy = Math.max(d.tops[0] - d.tops[f], Math.min(d.tops[last] + d.hs[last] - d.tops[f] - d.hs[f], dy));
+  var top = d.tops[f] + dy, bottom = top + d.hs[f], to = 0;
+  for (var i = 0; i <= last; i++) {
+    var mid = d.tops[i] + d.hs[i] / 2;
+    if (i < f ? mid < top : i > f && mid < bottom) to++;
+  }
+  d.to = to;
+  var slot = d.hs[f] + d.gap;
+  d.rows.forEach(function (r, i) {
+    var y = i === f ? dy : (f < i && i <= to) ? -slot : (to <= i && i < f) ? slot : 0;
+    r.style.transform = y ? 'translateY(' + y + 'px)' : '';
+  });
+}
+
+function dragTick() {
+  if (!drag) return;
+  var v = drag.cfg.view(), edge = 60, sp = 0;
+  if (drag.moved && drag.y < v.top + edge) sp = drag.y - (v.top + edge);
+  else if (drag.moved && drag.y > v.bottom - edge) sp = drag.y - (v.bottom - edge);
+  if (sp) drag.sc.scrollTop += Math.max(-16, Math.min(16, Math.round(sp / 4)));
+  dragPaint(drag);
+  drag.raf = requestAnimationFrame(dragTick);
+}
+
+function dragEnd(commit) {
+  var d = drag;
+  if (!d) return;
+  dragPaint(d);
+  drag = null;
+  cancelAnimationFrame(d.raf);
+  document.body.classList.remove('is-dragging');
+  if (commit && d.to !== d.from) { d.cfg.drop(d.from, d.to); return; }
+  d.row.classList.remove('is-lifted');
+  d.rows.forEach(function (r) { r.style.transform = ''; });
+}
+
+document.addEventListener('pointerdown', function (e) {
+  var h = (!drag && e.isPrimary && e.button === 0 && e.target.closest) ? e.target.closest('[data-drag]') : null;
+  if (!h) return;
+  e.preventDefault();   // マウスで押したときに文字が選択されないように
+  dragStart(e, h);
+});
+document.addEventListener('pointermove', function (e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  drag.y = e.clientY;
+  if (Math.abs(drag.y - drag.y0) > 4) drag.moved = true;
+  dragPaint(drag);
+});
+document.addEventListener('pointerup', function (e) { if (drag && e.pointerId === drag.id) dragEnd(true); });
+document.addEventListener('pointercancel', function (e) { if (drag && e.pointerId === drag.id) dragEnd(false); });
+document.addEventListener('lostpointercapture', function (e) { if (drag && e.pointerId === drag.id) dragEnd(false); });
+document.addEventListener('contextmenu', function (e) {
+  if (e.target.closest && e.target.closest('[data-drag]')) e.preventDefault();
 });
 
 /* ページ */

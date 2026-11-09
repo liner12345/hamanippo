@@ -65,7 +65,7 @@ AGENTS.md の指示にすべて従う。ここに書くのは AGENTS.md に無�
 
 ## リリース
 
-- `index.html` / `styles.css` / `app.js` を変えたら `sw.js` の `CACHE`（現在 `nippou-v27`）を +1。静的ファイルを新しく足したら `SHELL` にも追加する。
+- `index.html` / `styles.css` / `app.js` を変えたら `sw.js` の `CACHE`（現在 `nippou-v28`）を +1。静的ファイルを新しく足したら `SHELL` にも追加する。
 - 利用者に見える挙動や出力形式を変えたら、README.md の該当節（§3 使い方 / §4 設定）を同じ変更に含める。新しい不変条件が生まれたら AGENTS.md §4 に追記する。
 - コミットメッセージは `feat: …` / `fix: …` + 日本語の要約1行（既存ログに合わせる）。main への push がそのままデプロイ。
 

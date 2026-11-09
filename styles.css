@@ -206,9 +206,16 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 .route .stop:first-child .stop-gutter::before{top:26px}
 .route .stop:last-child .stop-gutter::before{bottom:calc(100% - 26px)}
 
+/* 並べ替えのつまみ（SM-3d）。縦スクロールを止めるのはつまみだけで、行の他の部分は従来どおり動かせる。
+   丸の中心は行の上端から 26px（背骨の始点と同じ）に置く */
+.stop-grip{
+  position:absolute;left:4px;top:4px;z-index:1;
+  width:44px;height:44px;display:grid;place-items:center;
+  touch-action:none;cursor:grab;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+}
 .stop-no{
-  position:relative;z-index:1;
-  width:26px;height:26px;margin:13px auto 0;
+  width:26px;height:26px;
   display:grid;place-items:center;border-radius:50%;
   background:var(--ink);color:var(--surface);
   font-family:var(--mono);font-size:11px;font-weight:700;
@@ -243,6 +250,13 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
   border-bottom-left-radius:9px;
   pointer-events:none;
 }
+
+/* ドラッグ中：持ち上げた行は指に付いて動き、他の行は差し込み先を空けるように滑る */
+body.is-dragging{-webkit-user-select:none;user-select:none;cursor:grabbing}
+body.is-dragging .stop,body.is-dragging .citem{transition:transform .15s ease}
+body.is-dragging .is-lifted{transition:none}
+.stop.is-lifted,.citem.is-lifted{z-index:5;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.stop.is-lifted .stop-no,.citem.is-lifted .cno{background:var(--hi);color:var(--hi-ink)}
 
 /* ── ページ切替（日付バーの続きとして白い面に置く） ── */
 .pagerow{
@@ -616,11 +630,19 @@ body.no-actions main{padding-bottom:calc(74px + var(--safe))}
 /* ── コース編集 ─────────────────────── */
 .btn-block{width:100%}
 .citem{
-  display:grid;grid-template-columns:34px 1fr 44px 44px 44px;align-items:center;gap:4px;
+  position:relative;
+  display:grid;grid-template-columns:44px 1fr 44px 44px 44px;align-items:center;gap:4px;
   background:var(--surface);border:1.5px solid var(--rule);border-radius:var(--r);
-  padding:4px 6px 4px 10px;margin-bottom:7px;min-height:var(--tap);
+  padding:4px 6px 4px 4px;margin-bottom:7px;min-height:var(--tap);
 }
-.cno{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--muted)}
+/* 番号がつまみ（SM-3d） */
+.cno{
+  width:44px;height:44px;display:grid;place-items:center;border-radius:8px;
+  background:var(--surface-2);
+  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--muted);
+  touch-action:none;cursor:grab;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+}
 .cname{font-size:15px;font-weight:600;word-break:break-word;min-width:0}
 .citem button{width:44px;height:44px;display:grid;place-items:center;border-radius:8px;color:var(--muted)}
 .citem button:disabled{opacity:.25}
