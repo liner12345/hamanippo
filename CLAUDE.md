@@ -40,7 +40,7 @@ AGENTS.md の指示にすべて従う。ここに書くのは AGENTS.md に無�
 - DB を変えたら `save()` → 再描画（`renderToday()` / `render()`）の順。
 - 破壊的操作は `confirm()`、結果通知は `toast()`。取り消し可能にするときは `undoSnapshot = snapPage(g)` + `toast(msg, '取り消す', undoApply)` の既存パターン（行の追加・削除・並べ替えはこちらで、確かめない）。`snapPage()` は行を中身ごと写す。`stops.slice()` で写すと、取り消す前に書き換えた `from` や `note` が戻らない。
 - 入力欄のあるシートを足すときは、`FORM_SIG` にその値の組を足し、開く関数で `markClean(id)` を呼ぶ（閉じる前の確認・SM-3b）。`openSheet()` の中で取らない（`backTo` で戻ったときに取り直してしまう）。
-- 並べ替えられる一覧を足すときは、`SORT` に一覧を足し、つまみに `data-drag` を付ける（SM-3d）。`touch-action:none` はつまみだけに付ける。行全体に付けると縦にスクロールできなくなる。
+- 並べ替えられる一覧を足すときは、`SORT` に一覧を足し、つまみに `data-drag` を付ける（SM-3d）。`touch-action:none` はつまみだけに付ける。行全体に付けると縦にスクロールできなくなる。スワイプで消せる行は `touch-action:pan-y` で、`SWIPE` に一覧を足して行に `data-swipe` と `data-swipe-id` を付ける（SM-3e）。
 - シートは `openSheet(id, backTo)` / `closeSheet()`。同時に開くのは1枚。`index.html` の `.sheet` 構造（grip / head / body / foot）を踏襲する。
 - タブは 日報 / 配送先 / コース / 履歴 の4つ。`setTab()` の `hidden` 切替・`#btn-add` のラベル・`render()` の3箇所を揃える。
 - `report(k)` は get-or-create。`DB.reports[k]` が存在しても「記録がある」とは限らない（履歴タブは stops が空のページを出さない）。
@@ -67,7 +67,7 @@ AGENTS.md の指示にすべて従う。ここに書くのは AGENTS.md に無�
 
 ## リリース
 
-- `index.html` / `styles.css` / `app.js` を変えたら `sw.js` の `CACHE`（現在 `nippou-v28`）を +1。静的ファイルを新しく足したら `SHELL` にも追加する。
+- `index.html` / `styles.css` / `app.js` を変えたら `sw.js` の `CACHE`（現在 `nippou-v29`）を +1。静的ファイルを新しく足したら `SHELL` にも追加する。
 - 利用者に見える挙動や出力形式を変えたら、README.md の該当節（§3 使い方 / §4 設定）を同じ変更に含める。新しい不変条件が生まれたら AGENTS.md §4 に追記する。
 - コミットメッセージは `feat: …` / `fix: …` + 日本語の要約1行（既存ログに合わせる）。main への push がそのままデプロイ。
 
