@@ -694,42 +694,43 @@ body.is-dragging .is-lifted{transition:none}
 .note{font-size:13px;color:var(--muted);line-height:1.7;margin:0 0 14px;white-space:pre-line}
 
 /* ── トースト ───────────────────────── */
-/* 「取り消す」に片手で届くよう、画面の下（操作バーのすぐ上）に出す。
-   操作バーの上端は タブバー64px + 操作バー72px */
+/* 画面の上に小さく出す（SM-3e）。下に出すと、選択画面で続けて足すたびに一覧を覆っていた。
+   押せば消える。「取り消す」は見た目を小さくしても、押せる高さは44px残す */
 .toast{
   position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(144px + var(--safe));z-index:60;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  min-height:52px;
-  width:calc(100vw - 28px);max-width:520px;
+  top:calc(env(safe-area-inset-top,0px) + 8px);z-index:60;
+  display:flex;align-items:center;gap:10px;
+  min-height:44px;
+  width:max-content;max-width:min(calc(100vw - 32px),520px);
   background:#ffffff;color:#131820;
-  padding:12px 16px;border-radius:var(--r);
-  font-size:14px;font-weight:700;line-height:1.4;
-  box-shadow:0 12px 36px rgba(0,0,0,.42), 0 0 0 1px rgba(0,0,0,.1);
-  border:2px solid var(--hi);
-  animation:toastUp .25s cubic-bezier(.16,1,.3,1);
+  padding:0 14px;border-radius:var(--r);
+  font-size:13px;font-weight:700;line-height:1.35;
+  box-shadow:0 4px 14px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.1);
+  cursor:pointer;
+  animation:toastDown .2s cubic-bezier(.16,1,.3,1);
 }
-body.no-actions .toast{bottom:calc(72px + var(--safe))}
-@keyframes toastUp{
-  from{transform:translateX(-50%) translateY(24px);opacity:0}
+@keyframes toastDown{
+  from{transform:translateX(-50%) translateY(-12px);opacity:0}
   to{transform:translateX(-50%) translateY(0);opacity:1}
 }
 .toast #toast-msg{
   flex:1;min-width:0;
-  line-height:1.4;word-break:break-word;overflow-wrap:anywhere;
+  word-break:break-word;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-box-orient:vertical;
   -webkit-line-clamp:2;line-clamp:2;
   overflow:hidden;
 }
 .toast #toast-act{
-  flex:none;color:#131820;font-weight:700;font-size:13px;
+  flex:none;position:relative;z-index:0;
+  color:#131820;font-weight:700;font-size:13px;
   min-height:44px;display:inline-flex;align-items:center;
-  padding:6px 12px;border-radius:6px;white-space:nowrap;
-  background:var(--hi);
+  padding:0 12px;margin-right:-8px;white-space:nowrap;
 }
-.toast #toast-act:active{
-  opacity:.85;
+.toast #toast-act::before{
+  content:'';position:absolute;inset:8px 0;z-index:-1;
+  border-radius:999px;background:var(--hi);
 }
+.toast #toast-act:active::before{opacity:.85}
 .toast #toast-act[hidden]{display:none}
 .toast[hidden]{display:none}
 

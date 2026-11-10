@@ -821,7 +821,12 @@ function toast(msg, actLabel, fn) {
   if (actLabel) { a.textContent = actLabel; a.hidden = false; } else { a.hidden = true; }
   t.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function () { t.hidden = true; toastFn = null; }, actLabel ? 6000 : 1500);
+  toastTimer = setTimeout(hideToast, actLabel ? 6000 : 1500);
+}
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastFn = null;
+  $('#toast').hidden = true;
 }
 
 /* ══════════════════════════════════════
@@ -1652,8 +1657,11 @@ if (navigator.share) {
   $('#mout-share').hidden = true;
 }
 
-$('#toast-act').addEventListener('click', function () {
-  var f = toastFn; toastFn = null; $('#toast').hidden = true; if (f) f();
+/* トーストはどこを押しても消える（SM-3e）。「取り消す」だけは、消してから取り消す */
+$('#toast').addEventListener('click', function (e) {
+  var f = e.target.closest('#toast-act') ? toastFn : null;
+  hideToast();
+  if (f) f();
 });
 
 /* 設定 */
