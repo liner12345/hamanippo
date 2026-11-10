@@ -497,7 +497,7 @@ function renderToday() {
     });
     if (st.note) tags.push('<span class="tag tag-note">' + esc(st.note) + '</span>');
     if (dd) tags.push('<span class="tag">' + esc(catName(dd.catId)) + '</span>');
-    return '<li class="stop' + (up ? ' is-transfer' : '') + '" data-menu="' + st.id + '">' +
+    return '<li class="stop' + (up ? ' is-transfer' : '') + '" data-menu="' + st.id + '" data-swipe="stop" data-swipe-id="' + st.id + '">' +
       '<div class="stop-gutter"><span class="stop-grip" data-drag="route"><span class="stop-no">' + pad(i + 1) + '</span></span></div>' +
       '<div class="stop-body"><div class="stop-name">' + esc(destName(st.destId)) + '</div>' +
       (tags.length ? '<div class="stop-meta">' + tags.join('') + '</div>' : '') + '</div>' +
@@ -1298,6 +1298,7 @@ $('#scrim').addEventListener('click', requestClose);
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
   if (drag) { dragEnd(false); return; }
+  if (swipe && swipe.active) { swipeEnd(false); return; }
   if (openId) requestClose();
 });
 
@@ -1389,16 +1390,22 @@ $('#stop-up').addEventListener('click', function () { moveStop(-1); });
 $('#stop-down').addEventListener('click', function () { moveStop(1); });
 /* 確かめずに消し、トーストの「取り消す」で戻せるようにする。
    ここから転送した行は、通常の配送として残す（from を外す） */
-$('#stop-del').addEventListener('click', function () {
+function deleteStop(stopId) {
   var g = curPage();
-  var st = currentStop(); if (!st) return;
+  var st = g.stops.filter(function (x) { return x.id === stopId; })[0];
+  if (!st) return;
   var kids = dropsOf(st, g.stops);
   undoSnapshot = snapPage(g);
   kids.forEach(function (x) { x.from = null; });
-  g.stops = g.stops.filter(function (x) { return x.id !== S.stopId; });
-  save(); closeSheet(); renderToday();
+  g.stops = g.stops.filter(function (x) { return x.id !== stopId; });
+  save(); renderToday();
   toast(destName(st.destId) + ' を削除しました' +
     (kids.length ? '。転送した' + kids.length + '件は通常の配送として残ります' : ''), '取り消す', undoApply);
+}
+$('#stop-del').addEventListener('click', function () {
+  if (!currentStop()) return;
+  closeSheet();
+  deleteStop(S.stopId);
 });
 
 /* 行の並べ替え（ドラッグ・SM-3d）。drag が null なら待機、値があればドラッグ中。
@@ -1507,10 +1514,18 @@ document.addEventListener('click', function (e) {
 
 document.addEventListener('pointerdown', function (e) {
   dragClickUntil = 0;
-  var h = (!drag && e.isPrimary && e.button === 0 && e.target.closest) ? e.target.closest('[data-drag]') : null;
-  if (!h) return;
-  e.preventDefault();   // マウスで押したときに文字が選択されないように
-  dragStart(e, h);
+  if (drag || !e.isPrimary || e.button !== 0 || !e.target.closest) return;
+  var h = e.target.closest('[data-drag]');
+  if (h) {
+    e.preventDefault();   // マウスで押したときに文字が選択されないように
+    dragStart(e, h);
+    return;
+  }
+  var row = e.target.closest('[data-swipe]');
+  if (row) swipe = {
+    cfg: SWIPE[row.dataset.swipe], row: row, id: row.dataset.swipeId,
+    pointerId: e.pointerId, x0: e.clientX, y0: e.clientY, dx: 0, active: false
+  };
 });
 document.addEventListener('pointermove', function (e) {
   if (!drag || e.pointerId !== drag.id) return;
@@ -1523,6 +1538,70 @@ document.addEventListener('pointercancel', function (e) { if (drag && e.pointerI
 document.addEventListener('lostpointercapture', function (e) { if (drag && e.pointerId === drag.id) dragEnd(false); });
 document.addEventListener('contextmenu', function (e) {
   if (e.target.closest && e.target.closest('[data-drag]')) e.preventDefault();
+});
+
+/* 行の左スワイプで削除（SM-3e）。swipe が null なら待機、active:false なら押しただけ、true ならスワイプ中。
+   押しただけのうちは何もしないので、タップと縦のスクロールは従来どおり動く */
+var SWIPE = {
+  stop: { remove: deleteStop }
+};
+var swipe = null;
+
+function swipePaint(s) {
+  var armed = s.dx <= -s.row.offsetWidth / 3;
+  s.row.style.transform = s.dx ? 'translateX(' + s.dx + 'px)' : '';
+  s.row.style.setProperty('--swipe-w', -s.dx + 'px');
+  s.row.classList.toggle('is-armed', armed);
+}
+
+function swipeReset(row) {
+  row.classList.remove('is-swiping', 'is-armed', 'is-settling');
+  row.style.transform = '';
+  row.style.removeProperty('--swipe-w');
+}
+
+/* 消すかどうかは離した時点の行の幅で決める。消す処理は ID で引き直すので、
+   動かしている間に行が消えていたら何もしない（その場合は行を元に戻すだけ） */
+function swipeEnd(commit) {
+  var s = swipe;
+  if (!s) return;
+  swipe = null;
+  if (!s.active) return;
+  dragClickUntil = Date.now() + 1000;
+  var row = s.row, gone = commit && s.dx <= -row.offsetWidth / 3;
+  var ms = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 150;
+  row.classList.add('is-settling');
+  s.dx = gone ? -row.offsetWidth : 0;
+  swipePaint(s);
+  setTimeout(function () {
+    if (gone) s.cfg.remove(s.id);
+    if (!swipe || swipe.row !== row) swipeReset(row);
+  }, ms);
+}
+
+document.addEventListener('pointermove', function (e) {
+  var s = swipe;
+  if (!s || e.pointerId !== s.pointerId) return;
+  var dx = e.clientX - s.x0, dy = e.clientY - s.y0;
+  if (!s.active) {
+    if (Math.abs(dx) <= 10 || Math.abs(dx) <= Math.abs(dy)) {
+      if (Math.abs(dy) > 10) swipe = null;
+      return;
+    }
+    s.active = true;
+    try { s.row.setPointerCapture(e.pointerId); } catch (err) {}
+    s.row.classList.remove('is-settling');
+    s.row.classList.add('is-swiping');
+  }
+  s.dx = Math.min(0, dx);
+  swipePaint(s);
+});
+document.addEventListener('pointerup', function (e) { if (swipe && e.pointerId === swipe.pointerId) swipeEnd(true); });
+document.addEventListener('pointercancel', function (e) { if (swipe && e.pointerId === swipe.pointerId) swipeEnd(false); });
+/* 指で押すと、押した子要素が暗黙に捕捉している。行へ捕捉を移すとその子要素で lostpointercapture が
+   起きるので、行自身が失ったときだけ取り消す */
+document.addEventListener('lostpointercapture', function (e) {
+  if (swipe && e.pointerId === swipe.pointerId && e.target === swipe.row) swipeEnd(false);
 });
 
 /* ページ */

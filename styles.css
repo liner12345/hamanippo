@@ -261,6 +261,20 @@ body.is-dragging .is-lifted{transition:none}
 .stop.is-lifted,.citem.is-lifted{z-index:5;box-shadow:0 10px 28px rgba(0,0,0,.28)}
 .stop.is-lifted .stop-no,.citem.is-lifted .cno{background:var(--hi);color:var(--hi-ink)}
 
+/* 左スワイプで削除（SM-3e）。縦のスクロールはブラウザに任せ、横の動きだけを受ける。
+   赤い面は行の右の外に置いて行と一緒に動かす。幅は動かした分だけなので、
+   行の元の右端を越えず、横スクロールが出ない。文字を選べなくするのは、マウスで横に動かしたときのため */
+[data-swipe]{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.is-swiping::before{
+  content:'削除';position:absolute;top:0;bottom:0;left:100%;
+  width:var(--swipe-w,0px);overflow:hidden;white-space:nowrap;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--danger) 80%,var(--surface));color:var(--surface);
+  font-size:15px;font-weight:700;border-radius:inherit;
+}
+.is-swiping.is-armed::before{background:var(--danger)}
+.is-settling,.is-settling::before{transition:transform .15s ease,width .15s ease}
+
 /* ── ページ切替（日付バーの続きとして白い面に置く） ── */
 .pagerow{
   display:flex;gap:8px;align-items:flex-end;
@@ -761,5 +775,6 @@ body.is-dragging .is-lifted{transition:none}
    .toast などが後方にあるため、ここでないと打ち消せない */
 @media (prefers-reduced-motion:reduce){
   .sheet,.toast{animation:none}
+  .is-settling,.is-settling::before{transition:none}
   .btn:active{transform:none}
 }
