@@ -669,7 +669,7 @@ function renderDest() {
       var mapBtn = d.address
         ? '<button class="dest-map-btn" data-map="' + esc(d.address) + '" aria-label="' + esc(d.name) + 'の地図を開く">' + MAP_PIN + '</button>'
         : '';
-      html += '<div class="dest-row">' +
+      html += '<div class="dest-row" data-swipe="dest" data-swipe-id="' + d.id + '">' +
         '<button class="dest-main" data-edit="' + d.id + '">' +
         '<div class="dest-name">' + esc(d.name) + '</div>' +
         (d.address ? '<div class="dest-addr">' + MAP_PIN + '<span>' + esc(d.address) + '</span></div>' : '') +
@@ -908,7 +908,7 @@ function renderPickList() {
     var subItems = [esc(catName(d.catId))];
     if (d.address) subItems.push(esc(d.address));
     if (d.memo) subItems.push(esc(d.memo));
-    return '<div class="pick-item' + (S.pickMode === 'course' ? ' solo' : '') + '">' +
+    return '<div class="pick-item' + (S.pickMode === 'course' ? ' solo' : '') + '" data-swipe="dest" data-swipe-id="' + d.id + '">' +
       '<button class="pick-row" data-pick="' + d.id + '">' +
         '<div class="pick-text">' +
           '<div class="pick-name">' + esc(d.name) + '</div>' +
@@ -1024,6 +1024,24 @@ function saveDest() {
     }
     closeSheet(); render(); toast('「' + name + '」を登録しました');
   }
+}
+
+/* 配送先を一覧から外す・戻す（SM-3e）。過去の日報が ID で参照しているので、消さずに archived にする。
+   undoSnapshot はページの行しか戻さないので、取り消しには archived を戻す関数を渡す */
+function setArchived(id, on) {
+  var d = destOf(id);
+  if (!d || !!d.archived === on) return null;
+  d.archived = on;
+  save(); render();
+  if (openId === 'sh-pick') { renderPickCats(); renderPickList(); }
+  return d;
+}
+function archiveDest(id) {
+  var d = setArchived(id, true);
+  if (!d) return;
+  toast('「' + d.name + '」を一覧から外しました', '取り消す', function () {
+    if (setArchived(id, false)) toast('元に戻しました');
+  });
 }
 
 /* ══════════════════════════════════════
@@ -1543,7 +1561,8 @@ document.addEventListener('contextmenu', function (e) {
 /* 行の左スワイプで削除（SM-3e）。swipe が null なら待機、active:false なら押しただけ、true ならスワイプ中。
    押しただけのうちは何もしないので、タップと縦のスクロールは従来どおり動く */
 var SWIPE = {
-  stop: { remove: deleteStop }
+  stop: { remove: deleteStop },
+  dest: { remove: archiveDest }
 };
 var swipe = null;
 

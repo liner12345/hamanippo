@@ -273,6 +273,9 @@ body.is-dragging .is-lifted{transition:none}
   font-size:15px;font-weight:700;border-radius:inherit;
 }
 .is-swiping.is-armed::before{background:var(--danger)}
+.is-swiping{position:relative}
+/* 選択画面の行は角丸のために中身を切っていて、外に置いた赤い面まで消えるので、スワイプ中だけ外す */
+.pick-item.is-swiping{overflow:visible}
 .is-settling,.is-settling::before{transition:transform .15s ease,width .15s ease}
 
 /* ── ページ切替（日付バーの続きとして白い面に置く） ── */
