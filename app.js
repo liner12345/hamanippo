@@ -1316,7 +1316,7 @@ $('#scrim').addEventListener('click', requestClose);
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
   if (drag) { dragEnd(false); return; }
-  if (swipe && swipe.active) { swipeEnd(false); return; }
+  if (swipe) { var wasActive = swipe.active; swipeEnd(false); if (wasActive) return; }
   if (openId) requestClose();
 });
 
